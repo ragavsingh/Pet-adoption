@@ -47,6 +47,18 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Lock body scroll on mobile when the mobile navigation panel is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   // Standard dropdown behavior: close on outside click, Escape key, or page scrolling
   useEffect(() => {
     if (!notifDropdownOpen && !userDropdownOpen) return;
@@ -414,48 +426,60 @@ export const Navbar: React.FC = () => {
               </div>
             </>
           ) : (
-            <div className="hidden md:flex items-center gap-2">
-              <Link to="/login">
-                <Button variant="ghost" size="sm" className="font-bold text-brand-800 hover:text-brand-950">
-                  Log In
-                </Button>
+            <>
+              {/* Mobile Right Action: Compact Log In button (Mobile only, < md) */}
+              <Link
+                to="/login"
+                className="md:hidden inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold text-brand-800 bg-surface/90 border border-brand-200 hover:border-brand-400 hover:bg-brand-100/70 transition-all shadow-xs shrink-0"
+              >
+                Log In
               </Link>
-              <Link to="/signup">
-                <Button variant="primary" size="sm" className="font-bold shadow-soft">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
+
+              {/* Desktop Auth Buttons (md: and larger, 100% preserved) */}
+              <div className="hidden md:flex items-center gap-2">
+                <Link to="/login">
+                  <Button variant="ghost" size="sm" className="font-bold text-brand-800 hover:text-brand-950">
+                    Log In
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button variant="primary" size="sm" className="font-bold shadow-soft">
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
+            </>
           )}
         </div>
       </div>
 
-      {/* Mobile Slide-Out Side Drawer (from the left, matching Admin Drawer style) */}
+      {/* Mobile Slide-Out Navigation Panel (Mobile only, < md) */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop with blur */}
+          {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
           />
 
-          {/* Drawer Sidebar */}
-          <div className="relative z-10 w-72 sm:w-80 h-full bg-brand-950 text-brand-100 border-r border-brand-800/80 shadow-2xl flex flex-col animate-slide-right select-none overflow-y-auto">
-            {/* Drawer Header */}
-            <div className="p-4 sm:p-5 border-b border-brand-800/80 flex items-center justify-between">
+          {/* Slide-out Panel with Website's Visual Branding & Colors */}
+          <div className="relative z-10 w-72 sm:w-80 max-w-[85vw] h-full bg-surface text-brand-950 border-r border-brand-200/80 shadow-2xl flex flex-col animate-slide-right select-none">
+            {/* Panel Header */}
+            <div className="p-4 sm:p-5 border-b border-brand-100 flex items-center justify-between bg-surface-soft/80">
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2.5 group"
               >
-                <div className="w-10 h-10 rounded-2xl bg-brand-800/70 border border-brand-700/80 flex items-center justify-center p-1.5 group-hover:scale-105 transition-transform shadow-inner shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-surface border border-brand-200 flex items-center justify-center p-1.5 group-hover:scale-105 transition-transform shadow-xs shrink-0">
                   <img src="/logo-icon.png" alt="Logo" className="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <span className="font-display text-sm font-extrabold text-white tracking-tight block">
+                  <span className="font-display text-sm font-extrabold text-brand-950 tracking-tight block">
                     PET ADOPTION
                   </span>
-                  <span className="text-[9px] uppercase tracking-widest font-extrabold text-brand-400 block -mt-0.5">
+                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-brand-600 block -mt-0.5">
                     Foster-to-Own
                   </span>
                 </div>
@@ -464,30 +488,30 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-brand-900 text-brand-400 hover:text-white transition-colors"
+                className="w-9 h-9 rounded-xl bg-surface border border-brand-200 flex items-center justify-center text-brand-600 hover:text-brand-950 hover:bg-brand-100/70 transition-colors shadow-xs cursor-pointer"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Sub-header status badge */}
-            <div className="px-5 py-2.5 bg-brand-900/40 border-b border-brand-800/60 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-semibold text-brand-200 text-[11px]">
-                  Verified Welfare Network
+            {/* Sub-header status pill */}
+            <div className="px-4 py-2 bg-brand-50 border-b border-brand-100/80 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-semibold text-brand-800 text-[11px]">
+                  Verified Foster Network
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-brand-400 bg-brand-900/80 px-2 py-0.5 rounded-md border border-brand-800">
+              <span className="text-[10px] font-bold text-brand-600 bg-surface px-2 py-0.5 rounded-full border border-brand-200">
                 Pan-India
               </span>
             </div>
 
-            {/* Navigation Section */}
-            <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-              <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-2">
-                Navigation
+            {/* Navigation Links List */}
+            <div className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+              <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-400 mb-2">
+                Explore Platform
               </p>
               {navLinks.map((link) => {
                 const IconComp = link.icon;
@@ -499,28 +523,28 @@ export const Navbar: React.FC = () => {
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
                         isActive
-                          ? 'bg-brand-700 text-white font-bold shadow-sm'
-                          : 'text-brand-300 hover:text-white hover:bg-brand-900/60'
+                          ? 'bg-brand-700 text-white font-bold shadow-soft'
+                          : 'text-brand-800 hover:text-brand-950 hover:bg-brand-100/60'
                       }`
                     }
                   >
-                    <IconComp className="w-4 h-4 text-brand-400 shrink-0" />
+                    <IconComp className="w-4 h-4 shrink-0" />
                     <span>{link.name}</span>
                   </NavLink>
                 );
               })}
 
-              {/* User Account / Actions */}
+              {/* User Account or Auth Actions */}
               {isAuthenticated && user ? (
-                <div className="pt-4 mt-4 border-t border-brand-800/80 space-y-1.5">
-                  <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-2">
+                <div className="pt-4 mt-4 border-t border-brand-100 space-y-1.5">
+                  <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-400 mb-2">
                     My Account ({role.toUpperCase()})
                   </p>
 
                   <Link
                     to={getDashboardLink()}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md transition-all"
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-white bg-brand-700 hover:bg-brand-800 shadow-soft transition-all"
                   >
                     <LayoutDashboard className="w-4 h-4 shrink-0" />
                     <span>Go to Dashboard</span>
@@ -529,14 +553,14 @@ export const Navbar: React.FC = () => {
                   <Link
                     to={role === 'provider' ? '/provider/favorites' : '/adopter/favorites'}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-semibold text-brand-300 hover:text-white hover:bg-brand-900/60 transition-colors"
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-800 hover:bg-brand-100/60 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <Heart className="w-4 h-4 text-rose-400 shrink-0" />
+                      <Heart className="w-4 h-4 text-rose-500 shrink-0" />
                       <span>Saved Favorites</span>
                     </div>
                     {favoriteCount > 0 && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-100 text-rose-700 border border-rose-200">
                         {favoriteCount}
                       </span>
                     )}
@@ -545,46 +569,55 @@ export const Navbar: React.FC = () => {
                   <Link
                     to={role === 'provider' ? '/provider/notifications' : role === 'admin' ? '/admin/requests' : '/adopter/notifications'}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-semibold text-brand-300 hover:text-white hover:bg-brand-900/60 transition-colors"
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-800 hover:bg-brand-100/60 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <Bell className="w-4 h-4 text-brand-400 shrink-0" />
+                      <Bell className="w-4 h-4 text-brand-600 shrink-0" />
                       <span>Notifications</span>
                     </div>
                     {unreadCount > 0 && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-200 text-brand-900 border border-brand-300">
                         {unreadCount}
                       </span>
                     )}
                   </Link>
 
-                  {role === 'admin' && (
+                  {role === 'admin' ? (
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-emerald-800 hover:bg-emerald-50 border border-emerald-200 transition-colors"
+                    >
+                      <Shield className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Admin Overview</span>
+                    </Link>
+                  ) : (
                     <Link
                       to="/admin"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3.5 py-2 rounded-2xl text-xs font-semibold text-emerald-300 hover:text-white hover:bg-emerald-950/60 border border-emerald-800/60 transition-colors"
+                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-700 hover:bg-brand-50 border border-brand-200 transition-colors"
                     >
-                      <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <Shield className="w-4 h-4 text-brand-500 shrink-0" />
                       <span>Admin Portal</span>
                     </Link>
                   )}
                 </div>
               ) : (
-                <div className="pt-4 mt-4 border-t border-brand-800/80 space-y-2">
-                  <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-1">
-                    Get Started
+                <div className="pt-4 mt-4 border-t border-brand-100 space-y-2">
+                  <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-400 mb-1">
+                    Join Platform
                   </p>
                   <Link
                     to="/signup"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl text-xs font-bold bg-brand-700 hover:bg-brand-600 text-white shadow-soft transition-all"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-bold bg-brand-700 hover:bg-brand-800 text-white shadow-soft transition-all"
                   >
-                    <span>Create Account</span>
+                    <span>Get Started</span>
                   </Link>
                   <Link
                     to="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-2xl text-xs font-semibold text-brand-200 hover:text-white hover:bg-brand-900/80 border border-brand-800 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-full text-xs font-bold text-brand-900 bg-surface border border-brand-200 hover:bg-brand-50 shadow-xs transition-colors"
                   >
                     <span>Log In</span>
                   </Link>
@@ -592,15 +625,15 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Drawer Footer */}
-            <div className="p-4 border-t border-brand-800/80 bg-brand-900/30">
+            {/* Panel Footer */}
+            <div className="p-4 border-t border-brand-100 bg-surface-soft/90">
               {isAuthenticated && user ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <UserAvatar user={user} size="sm" />
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate">{user.name}</p>
-                      <p className="text-[10px] text-brand-400 truncate">{user.email}</p>
+                      <p className="text-xs font-bold text-brand-950 truncate">{user.name}</p>
+                      <p className="text-[10px] text-brand-muted truncate">{user.email}</p>
                     </div>
                   </div>
                   <button
@@ -608,16 +641,16 @@ export const Navbar: React.FC = () => {
                       logout();
                       setMobileMenuOpen(false);
                     }}
-                    className="p-2 rounded-xl text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 transition-colors shrink-0 cursor-pointer"
+                    className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors shrink-0 cursor-pointer"
                     title="Log Out"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <div className="text-center text-[10px] text-brand-400 space-y-1">
-                  <p className="font-semibold text-brand-300">🐾 Zero Breeder Policy • Ethical Adoption</p>
-                  <p className="text-brand-500">© 2026 Pet Adoption Platform</p>
+                <div className="text-center text-[10px] text-brand-muted space-y-1">
+                  <p className="font-semibold text-brand-700">🐾 Zero Breeder Policy • Ethical Foster-to-Own</p>
+                  <p className="text-brand-400">© 2026 Pet Adoption Platform</p>
                 </div>
               )}
             </div>
