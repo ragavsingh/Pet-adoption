@@ -251,6 +251,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const realLogout = async () => {
     setIsLoading(true);
+    try {
+      sessionStorage.removeItem('pet_admin_session_auth_v2');
+      sessionStorage.removeItem('pet_admin_explicit_locked');
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(AUTH_MODE_KEY);
+    } catch {
+      // Ignore in non-browser environments
+    }
     await authService.signOut();
     setUser(null);
     setAuthMode('demo');

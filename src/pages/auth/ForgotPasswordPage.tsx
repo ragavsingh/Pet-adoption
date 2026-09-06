@@ -80,12 +80,12 @@ export const ForgotPasswordPage: React.FC = () => {
       return;
     }
 
-    if (newPassword && newPassword.length < 8) {
+    if (!newPassword || newPassword.length < 8) {
       setErrorMessage('New password must be at least 8 characters long.');
       return;
     }
 
-    if (newPassword && newPassword !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       setErrorMessage('Passwords do not match. Please re-enter your password.');
       return;
     }
@@ -290,6 +290,7 @@ export const ForgotPasswordPage: React.FC = () => {
                   <input
                     id="forgot-new-password"
                     type={showPassword ? 'text' : 'password'}
+                    required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter your new password"
@@ -319,6 +320,7 @@ export const ForgotPasswordPage: React.FC = () => {
                   <input
                     id="forgot-confirm-password"
                     type={showPassword ? 'text' : 'password'}
+                    required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter your new password"

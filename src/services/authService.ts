@@ -60,7 +60,7 @@ export function getFriendlyAuthErrorMessage(err: unknown): string {
     message.includes('User not found') ||
     message.includes('signups not allowed')
   ) {
-    return 'No account was found with this email address. Please create an account or verify your email.';
+    return 'If an account exists with this email address, a verification code has been sent.';
   }
   if (
     message.includes('over_email_send_rate_limit') ||
@@ -80,6 +80,18 @@ export function getFriendlyAuthErrorMessage(err: unknown): string {
   }
   if (message.includes('Network') || message.includes('Failed to fetch')) {
     return 'Unable to reach the server. Please check your internet connection.';
+  }
+
+  // Prevent leakage of internal database structures, table names, SQLSTATE codes, or triggers
+  if (
+    message.includes('SQLSTATE') ||
+    message.includes('relation') ||
+    message.includes('syntax error') ||
+    message.includes('violates') ||
+    message.includes('permission denied') ||
+    message.includes('duplicate key')
+  ) {
+    return 'A database operation error occurred. Please try again or contact support.';
   }
 
   return message;
@@ -163,10 +175,10 @@ export const authService = {
       };
     }
 
-    if (!password || password.length < 6) {
+    if (!password || password.length < 8) {
       return {
         success: false,
-        error: 'Password must be at least 6 characters long.',
+        error: 'Password must be at least 8 characters long.',
       };
     }
 
@@ -221,11 +233,24 @@ export const authService = {
       const { data, error } = await supabase.auth.signInWithOtp({
         email: cleanEmail,
         options: {
-          shouldCreateUser: true,
+          shouldCreateUser: false,
         },
       });
 
       if (error) {
+        const errMsg = error.message || '';
+        // Anti-enumeration: If user not found / signups not allowed for OTP,
+        // treat as success to avoid revealing account existence to third parties.
+        if (
+          errMsg.includes('Signups not allowed for otp') ||
+          errMsg.includes('User not found') ||
+          errMsg.includes('signups not allowed')
+        ) {
+          return {
+            success: true,
+            user: null,
+          };
+        }
         return { success: false, error: getFriendlyAuthErrorMessage(error) };
       }
 

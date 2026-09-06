@@ -71,6 +71,11 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters long.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -257,11 +262,11 @@ export const LoginPage: React.FC = () => {
               <span>{errorMessage}</span>
               {errorMessage.includes('Invalid email or password') && (
                 <p className="text-[11px] text-rose-700">
-                  New here or deleted your user from Supabase?{' '}
+                  Don't have an account yet?{' '}
                   <Link to="/signup" className="font-bold underline hover:text-rose-950">
-                    Create your account here
+                    Sign up here
                   </Link>{' '}
-                  with your authentic email & password first.
+                  to create one.
                 </p>
               )}
             </div>
@@ -314,6 +319,7 @@ export const LoginPage: React.FC = () => {
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   required
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
