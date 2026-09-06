@@ -120,8 +120,8 @@ export const Navbar: React.FC = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
         isScrolled
-          ? 'py-2 sm:py-2.5 bg-surface/90 backdrop-blur-md shadow-soft border-b border-brand-200/70'
-          : 'py-2.5 sm:py-3.5 md:py-4 bg-surface-soft/80 backdrop-blur-sm'
+          ? 'py-2 md:py-2.5 bg-surface/90 backdrop-blur-md shadow-soft border-b border-brand-200/70'
+          : 'py-2 md:py-4 bg-surface-soft/90 backdrop-blur-sm'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -414,13 +414,13 @@ export const Navbar: React.FC = () => {
               </div>
             </>
           ) : (
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <Link to="/login">
-                <Button variant="ghost" size="sm" className="font-bold text-brand-800 hover:text-brand-950 px-2.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm">
+                <Button variant="ghost" size="sm" className="font-bold text-brand-800 hover:text-brand-950">
                   Log In
                 </Button>
               </Link>
-              <Link to="/signup" className="hidden sm:inline-flex">
+              <Link to="/signup">
                 <Button variant="primary" size="sm" className="font-bold shadow-soft">
                   Get Started
                 </Button>
