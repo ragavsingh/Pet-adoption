@@ -1190,10 +1190,10 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                       Email Address
                     </span>
                     <a
-                      href={`mailto:${request.adopterEmail || ''}`}
+                      href={request.adopterEmail ? `mailto:${request.adopterEmail}` : undefined}
                       className="font-bold text-brand-900 hover:text-brand-600 transition-colors mt-0.5 block"
                     >
-                      {request.adopterEmail || 'Verified User (rgvcasm@gmail.com)'}
+                      {request.adopterEmail || 'Verified Adopter'}
                     </a>
                   </div>
 

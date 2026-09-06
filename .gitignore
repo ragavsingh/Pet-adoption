@@ -32,3 +32,9 @@ dist-ssr
 *.sln
 *.sw?
 *.bat
+
+# Temporary & scratch files
+scratch/
+scripts/renameToRaghav.mjs
+model_style*.html
+pawtrial.html

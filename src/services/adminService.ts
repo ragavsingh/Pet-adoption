@@ -296,7 +296,7 @@ export const adminService = {
   /**
    * Retrieves registered users with role and profile details.
    * Utilizes the get_platform_users SECURITY DEFINER RPC to bypass RLS,
-   * guaranteeing that all real registered adopters and providers (including rgv)
+   * guaranteeing that all real registered adopters and providers
    * appear in the Admin Users directory.
    */
   async getUsers(search?: string, roleFilter?: string): Promise<AdminUserRecord[]> {
@@ -375,7 +375,7 @@ export const adminService = {
       console.warn('[adminService] Could not parse stored local users:', e);
     }
 
-    // 3. Merge currently active session user (e.g. rgv) so they are immediately visible
+    // 3. Merge currently active session user so they are immediately visible
     try {
       const activeSession = localStorage.getItem('pet_adoption_auth_user_v2');
       if (activeSession) {
