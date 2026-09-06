@@ -22,13 +22,11 @@ export const AdminLayout: React.FC = () => {
   const { user } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Check if session is already unlocked in this browser tab
+  // Check if session is already unlocked in this browser tab via passkey
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     try {
       const auth = sessionStorage.getItem(ADMIN_SESSION_KEY);
-      if (auth === 'unlocked') return true;
-      if (user?.role === 'admin') return true;
-      return false;
+      return auth === 'unlocked';
     } catch {
       return false;
     }
@@ -39,20 +37,13 @@ export const AdminLayout: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (user?.role === 'admin' && !sessionStorage.getItem('pet_admin_explicit_locked')) {
-      setIsUnlocked(true);
-      sessionStorage.setItem(ADMIN_SESSION_KEY, 'unlocked');
-    }
-  }, [user]);
-
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMsg('');
 
     const clean = passkey.trim();
-    if (VALID_PASSKEYS.includes(clean) || (user?.email && user.role === 'admin')) {
+    if (VALID_PASSKEYS.includes(clean)) {
       sessionStorage.setItem(ADMIN_SESSION_KEY, 'unlocked');
       sessionStorage.removeItem('pet_admin_explicit_locked');
       setIsUnlocked(true);

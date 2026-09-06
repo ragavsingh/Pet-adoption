@@ -9,9 +9,6 @@ import { recordRegisteredUser } from '../../services/adminService';
 import {
   Lock,
   Mail,
-  User,
-  Home,
-  Shield,
   ShieldCheck,
   AlertCircle,
   ArrowLeft,
@@ -44,7 +41,7 @@ export const LoginPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  const { login, realLogin, realLoginWithOtp, realVerifyOtp, realResendOtp } = useAuth();
+  const { realLogin, realLoginWithOtp, realVerifyOtp, realResendOtp } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -200,23 +197,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Quick 1-Click Demo Login (Strictly Isolated Evaluation Helper)
-  const handleQuickDemo = (role: 'adopter' | 'provider' | 'admin') => {
-    if (role === 'adopter') {
-      login('raghav.singh@example.com', 'adopter');
-      showToast('Logged in as Demo Adopter (Raghav)', 'success');
-      navigate('/adopter/dashboard');
-    } else if (role === 'provider') {
-      login('sarah.dsouza@example.com', 'provider');
-      showToast("Logged in as Demo Provider (Sarah)", 'success');
-      navigate('/provider/dashboard');
-    } else {
-      login('admin@petadoption.org', 'admin');
-      showToast('Logged in as Demo Admin', 'success');
-      navigate('/admin/dashboard');
-    }
-  };
-
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md bg-surface rounded-3xl p-8 sm:p-10 border border-brand-200/80 shadow-soft-lg space-y-7 text-left animate-fade-in">
@@ -259,39 +239,6 @@ export const LoginPage: React.FC = () => {
               </p>
             </>
           )}
-        </div>
-
-        {/* Quick Demo Fill Pills (Evaluation Helper - Kept Separate) */}
-        <div className="p-3.5 bg-brand-50 rounded-2xl border border-brand-200 space-y-2">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-600 block text-center">
-            Quick 1-Click Demo Login
-          </span>
-          <div className="grid grid-cols-3 gap-1.5">
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('adopter')}
-              className="py-1.5 px-2 rounded-xl bg-surface hover:bg-brand-100 border border-brand-200 text-[11px] font-bold text-brand-900 transition-colors flex items-center justify-center gap-1"
-            >
-              <User className="w-3 h-3 text-brand-600" />
-              <span>Adopter</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('provider')}
-              className="py-1.5 px-2 rounded-xl bg-surface hover:bg-brand-100 border border-brand-200 text-[11px] font-bold text-brand-900 transition-colors flex items-center justify-center gap-1"
-            >
-              <Home className="w-3 h-3 text-brand-600" />
-              <span>Provider</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('admin')}
-              className="py-1.5 px-2 rounded-xl bg-surface hover:bg-brand-100 border border-brand-200 text-[11px] font-bold text-brand-900 transition-colors flex items-center justify-center gap-1"
-            >
-              <Shield className="w-3 h-3 text-brand-600" />
-              <span>Admin</span>
-            </button>
-          </div>
         </div>
 
         {/* Informational Message Banner */}

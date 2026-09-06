@@ -351,6 +351,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    try {
+      sessionStorage.removeItem('pet_admin_session_auth_v2');
+      sessionStorage.removeItem('pet_admin_explicit_locked');
+    } catch {
+      // Ignore in non-browser environments
+    }
     if (authMode === 'supabase') {
       realLogout();
     } else {
