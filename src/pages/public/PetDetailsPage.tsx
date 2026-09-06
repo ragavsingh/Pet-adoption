@@ -163,10 +163,16 @@ export const PetDetailsPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <Link
           to="/pets"
+          onClick={(e) => {
+            if (window.history.length > 1) {
+              e.preventDefault();
+              navigate(-1);
+            }
+          }}
           className="inline-flex items-center gap-2 text-xs font-bold text-brand-700 hover:text-brand-950 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to All Pets</span>
+          <span>Back to Find Pets</span>
         </Link>
 
         <div className="flex items-center gap-2">

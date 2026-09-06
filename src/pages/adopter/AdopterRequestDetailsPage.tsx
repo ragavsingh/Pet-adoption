@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { adoptionService } from '../../services/adoptionService';
 import { AdoptionRequest, getDefaultVerification } from '../../types/adoptionRequest';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -28,6 +28,7 @@ import { realtimeSync } from '../../services/realtimeSync';
 export const AdopterRequestDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [request, setRequest] = useState<AdoptionRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +107,12 @@ export const AdopterRequestDetailsPage: React.FC = () => {
       <div>
         <Link
           to="/adopter/requests"
+          onClick={(e) => {
+            if (window.history.length > 1) {
+              e.preventDefault();
+              navigate(-1);
+            }
+          }}
           className="inline-flex items-center gap-2 text-xs font-bold text-brand-700 hover:text-brand-950 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
