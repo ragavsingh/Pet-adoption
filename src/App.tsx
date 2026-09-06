@@ -61,10 +61,12 @@ import { AdminTestBenchPage } from './pages/admin/AdminTestBenchPage';
 
 // Success / Certificate Page
 import { AdoptionSuccessPage } from './pages/AdoptionSuccessPage';
+import { ScrollRestoration } from './components/common/ScrollRestoration';
 
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <ScrollRestoration />
       <ToastProvider>
         <AuthProvider>
           <FavoritesProvider>
