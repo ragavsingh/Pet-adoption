@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Logo } from '../common/Logo';
 import { Button } from '../common/Button';
@@ -131,14 +132,15 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ease-in-out ${
-        isScrolled
-          ? 'py-1.5 md:py-2.5 bg-surface/95 backdrop-blur-md shadow-soft border-b border-brand-200/80'
-          : 'py-3 md:py-4 bg-surface-soft/90 backdrop-blur-sm border-b border-transparent'
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ease-in-out ${
+          isScrolled
+            ? 'py-1.5 md:py-2.5 bg-surface/95 backdrop-blur-md shadow-soft border-b border-brand-200/80'
+            : 'py-3 md:py-4 bg-surface-soft/90 backdrop-blur-sm border-b border-transparent'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Left Side: Mobile 3-Lines Hamburger (Mobile only) + Brand Logo */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
@@ -429,6 +431,14 @@ export const Navbar: React.FC = () => {
             </>
           ) : (
             <>
+              {/* Mobile Right Action: Compact Log In button (Mobile only, < md) */}
+              <Link
+                to="/login"
+                className="md:hidden inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold text-brand-800 bg-surface/90 border border-brand-200 hover:border-brand-400 hover:bg-brand-100/70 transition-all shadow-xs shrink-0"
+              >
+                Log In
+              </Link>
+
               {/* Desktop Auth Buttons (md: and larger, 100% preserved) */}
               <div className="hidden md:flex items-center gap-2">
                 <Link to="/login">
@@ -446,11 +456,14 @@ export const Navbar: React.FC = () => {
           )}
         </div>
       </div>
+    </header>
 
-      {/* Mobile Slide-Out Full-Height Navigation Drawer (Mobile only, < md) */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop overlay */}
+    {/* Mobile Slide-Out Full-Height Navigation Drawer (Rendered via React Portal onto document.body to bypass parent header backdrop-filter containing block) */}
+    {mobileMenuOpen &&
+      typeof document !== 'undefined' &&
+      createPortal(
+        <div className="md:hidden fixed inset-0 z-[9999] flex" role="dialog" aria-modal="true">
+          {/* Backdrop overlay covering the full screen */}
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
@@ -458,9 +471,9 @@ export const Navbar: React.FC = () => {
           />
 
           {/* Full-Height Drawer from Left with Platform Branding */}
-          <div className="relative z-10 w-[86vw] sm:w-96 max-w-[380px] h-full bg-[#FAF8F5] text-brand-950 border-r border-brand-200/90 shadow-2xl flex flex-col animate-slide-right select-none overflow-hidden">
+          <div className="relative z-10 w-[84vw] sm:w-96 max-w-[380px] h-[100dvh] max-h-screen bg-[#FAF8F5] text-brand-950 border-r border-brand-200/90 shadow-2xl flex flex-col animate-slide-right select-none overflow-hidden">
             {/* Drawer Header */}
-            <div className="p-4 sm:p-5 border-b border-brand-200/70 flex items-center justify-between bg-surface/80 backdrop-blur-xs">
+            <div className="p-4 sm:p-5 border-b border-brand-200/70 flex items-center justify-between bg-surface/90 backdrop-blur-xs shrink-0">
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
@@ -490,7 +503,7 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Sub-header status pill */}
-            <div className="px-4 py-2.5 bg-brand-100/50 border-b border-brand-200/60 flex items-center justify-between text-xs">
+            <div className="px-4 py-2.5 bg-brand-100/50 border-b border-brand-200/60 flex items-center justify-between text-xs shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="font-bold text-brand-800 text-[11px]">
@@ -503,7 +516,7 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Navigation Links List */}
-            <div className="flex-1 px-3.5 py-4 space-y-2 overflow-y-auto">
+            <div className="flex-1 px-3.5 py-4 space-y-2 overflow-y-auto overscroll-contain">
               <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-1.5">
                 Explore Navigation
               </p>
@@ -665,7 +678,7 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Drawer Footer */}
-            <div className="p-4 border-t border-brand-200/70 bg-surface/90">
+            <div className="p-4 border-t border-brand-200/70 bg-surface/90 shrink-0">
               {isAuthenticated && user ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -694,8 +707,9 @@ export const Navbar: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </header>
+    </>
   );
 };
