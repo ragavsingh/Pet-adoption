@@ -1,4 +1,4 @@
-# 🐾 Pet Adoption Platform
+# 🐾 Pet Adoption & Foster-to-Own Platform
 
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -15,7 +15,7 @@
 
 ## 🌟 Executive Overview
 
-Traditional pet adoption often suffers from fragmented screening, high return rates, and a lack of structured transition support. **Pet Adoption Platform** solves this through a guided, digital-first adoption ecosystem featuring:
+Traditional pet adoption often suffers from fragmented screening, high return rates, and a lack of structured transition support. **Pet Adoption & Foster-to-Own Platform** solves this through a guided, digital-first adoption ecosystem featuring:
 
 - **Foster-to-Own Bonding Trials**: A structured 14-day trial period before legal adoption, complete with daily welfare journals, live countdowns, extension requests, and consensus milestones.
 - **Multi-Role Portals**: Tailored interfaces and workflows for **Adopters**, **Verified Rescue Shelters / Providers**, and **Platform Administrators**.
