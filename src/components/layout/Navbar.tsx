@@ -118,10 +118,10 @@ export const Navbar: React.FC = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ease-in-out ${
         isScrolled
-          ? 'py-2 md:py-2.5 bg-surface/90 backdrop-blur-md shadow-soft border-b border-brand-200/70'
-          : 'py-2 md:py-4 bg-surface-soft/90 backdrop-blur-sm'
+          ? 'py-1.5 md:py-2.5 bg-surface/95 backdrop-blur-md shadow-soft border-b border-brand-200/80'
+          : 'py-3 md:py-4 bg-surface-soft/90 backdrop-blur-sm border-b border-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -163,10 +163,10 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           {isAuthenticated && user ? (
             <>
-              {/* Favorites Heart (Scoped to user) */}
+              {/* Favorites Heart (Scoped to user, visible on sm+ screens) */}
               <Link
                 to={role === 'provider' ? '/provider/favorites' : '/adopter/favorites'}
-                className="relative w-10 h-10 rounded-full bg-surface border border-brand-200 flex items-center justify-center text-brand-800 hover:text-rose-600 hover:border-rose-200 transition-colors shadow-sm"
+                className="hidden sm:flex relative w-10 h-10 rounded-full bg-surface border border-brand-200 items-center justify-center text-brand-800 hover:text-rose-600 hover:border-rose-200 transition-colors shadow-sm"
                 aria-label={`Saved favorites (${favoriteCount})`}
               >
                 <Heart className="w-5 h-5" />
