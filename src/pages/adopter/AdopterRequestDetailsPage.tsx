@@ -24,11 +24,13 @@ import {
 } from 'lucide-react';
 
 import { realtimeSync } from '../../services/realtimeSync';
+import { useSmartBack } from '../../hooks/useSmartBack';
 
 export const AdopterRequestDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const handleBack = useSmartBack('/adopter/requests');
   const [request, setRequest] = useState<AdoptionRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,19 +107,14 @@ export const AdopterRequestDetailsPage: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-8 text-left">
       {/* Back button */}
       <div>
-        <Link
-          to="/adopter/requests"
-          onClick={(e) => {
-            if (window.history.length > 1) {
-              e.preventDefault();
-              navigate(-1);
-            }
-          }}
+        <button
+          onClick={handleBack}
+          type="button"
           className="inline-flex items-center gap-2 text-xs font-bold text-brand-700 hover:text-brand-950 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to All Requests</span>
-        </Link>
+          <span>Back</span>
+        </button>
       </div>
 
       {/* Header Banner */}

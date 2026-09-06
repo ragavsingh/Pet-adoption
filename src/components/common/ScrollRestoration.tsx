@@ -1,7 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
+import {
+  HistoryStackItem,
+  getSessionHistoryStack,
+  saveSessionHistoryStack,
+} from '../../hooks/useSmartBack';
 
-const SCROLL_STORAGE_KEY = 'pet_adoption_scroll_history_v2';
+const SCROLL_STORAGE_KEY = 'pet_adoption_scroll_history_v3';
 
 interface ScrollEntry {
   x: number;
@@ -10,23 +15,27 @@ interface ScrollEntry {
 }
 
 /**
- * Universal Scroll Restoration and History Engine
+ * Universal Multi-Level Scroll Restoration and Navigation History Engine
  *
- * 1. Detail-to-Listing / Back Navigation:
- *    When navigating back from a detail/profile page to a listing page (e.g. /pets/:id -> /pets),
- *    or when using browser Back/Forward (POP), restores the exact scroll position where the user left off.
+ * 1. Step-by-Step Multi-Level Navigation:
+ *    Maintains the full navigation stack across multi-step journeys
+ *    (e.g., Page 1 [Find Pets] -> Page 2 [Pet Profile] -> Page 3 [Adoption Details]).
+ *    When returning back (Page 3 -> Page 2 -> Page 1), restores each page's exact
+ *    scroll position independently using unique history keys.
  *
- * 2. Asynchronous Content Awareness:
- *    For pages that fetch data asynchronously (e.g. PetsPage, RequestsPage), watches DOM height
- *    via ResizeObserver/MutationObserver so the scroll position is accurately restored once the
- *    content items render, preventing browser clamping to 0.
+ * 2. Zero-Overwrite Protection:
+ *    Ensures that route unmount transitions and transient browser layout shifts
+ *    never overwrite a valid positive scroll position with zero.
  *
- * 3. New Page Navigation:
- *    When intentionally navigating to a new section (Home -> Find Pets, About, Contact, etc.),
- *    opens cleanly and naturally from the very beginning of the page (0, 0).
+ * 3. Asynchronous Content Observation:
+ *    Watches DOM expansion via ResizeObserver and MutationObserver so pages that
+ *    fetch listings or records from Supabase (e.g., PetsPage, PetDetailsPage)
+ *    restore to their exact scroll position once the content finishes rendering,
+ *    preventing browser clamping to 0.
  *
- * 4. Filter and Search Preservation:
- *    When modifying filters or query parameters on the same page, maintains the user's scroll position.
+ * 4. Clean Forward Navigation:
+ *    When intentionally opening a new section from the navbar or footer,
+ *    starts smoothly and cleanly from the top (0, 0).
  */
 export const ScrollRestoration: React.FC = () => {
   const location = useLocation();
@@ -35,7 +44,7 @@ export const ScrollRestoration: React.FC = () => {
   const prevLocationRef = useRef<{ pathname: string; search: string; key: string } | null>(null);
   const isRestoringRef = useRef<boolean>(false);
 
-  // Cached positions by unique history key
+  // Cached positions by unique history key (location.key)
   const keyPositionsRef = useRef<Record<string, ScrollEntry>>((() => {
     try {
       const stored = sessionStorage.getItem(`${SCROLL_STORAGE_KEY}_keys`);
@@ -45,7 +54,7 @@ export const ScrollRestoration: React.FC = () => {
     }
   })());
 
-  // Cached positions by pathname (e.g. '/pets', '/adopter/requests')
+  // Cached positions by pathname + search (fallback when key is new or unavailable)
   const pathPositionsRef = useRef<Record<string, ScrollEntry>>((() => {
     try {
       const stored = sessionStorage.getItem(`${SCROLL_STORAGE_KEY}_paths`);
@@ -56,7 +65,7 @@ export const ScrollRestoration: React.FC = () => {
   })());
 
   // Session navigation stack tracking
-  const historyStackRef = useRef<string[]>([location.pathname]);
+  const historyStackRef = useRef<HistoryStackItem[]>(getSessionHistoryStack());
 
   // Set browser history scrollRestoration to manual so native browser doesn't conflict with async SPA renders
   useEffect(() => {
@@ -98,7 +107,7 @@ export const ScrollRestoration: React.FC = () => {
     }
   };
 
-  // Passive, throttled scroll position tracker
+  // Passive, real-time throttled scroll tracker while actively viewing the page
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -114,9 +123,14 @@ export const ScrollRestoration: React.FC = () => {
           const x = window.scrollX || window.pageXOffset || 0;
           const entry: ScrollEntry = { x, y, timestamp: Date.now() };
 
-          keyPositionsRef.current[location.key] = entry;
-          pathPositionsRef.current[location.pathname] = entry;
-          if (location.search) {
+          // Zero-Overwrite Guard: Only update if y > 0 or if no previous position exists for this key
+          if (y > 0 || !keyPositionsRef.current[location.key]) {
+            keyPositionsRef.current[location.key] = entry;
+          }
+          if (y > 0 || !pathPositionsRef.current[location.pathname]) {
+            pathPositionsRef.current[location.pathname] = entry;
+          }
+          if (location.search && (y > 0 || !pathPositionsRef.current[location.pathname + location.search])) {
             pathPositionsRef.current[location.pathname + location.search] = entry;
           }
 
@@ -132,37 +146,57 @@ export const ScrollRestoration: React.FC = () => {
     mainContainers.forEach((el) => el.addEventListener('scroll', handleScroll, { passive: true }));
 
     return () => {
+      // Before route change unmounts, snapshot final positive scroll position
+      const finalY = getScrollY();
+      const finalX = window.scrollX || window.pageXOffset || 0;
+      if (finalY > 0) {
+        const entry: ScrollEntry = { x: finalX, y: finalY, timestamp: Date.now() };
+        keyPositionsRef.current[location.key] = entry;
+        pathPositionsRef.current[location.pathname] = entry;
+        if (location.search) {
+          pathPositionsRef.current[location.pathname + location.search] = entry;
+        }
+        persistToSession();
+      }
+
       window.removeEventListener('scroll', handleScroll);
       mainContainers.forEach((el) => el.removeEventListener('scroll', handleScroll));
     };
   }, [location.key, location.pathname, location.search]);
 
-  // Main scroll restoration and navigation engine
+  // Main navigation stack and restoration engine
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const prev = prevLocationRef.current;
     const current = location;
 
-    // Save previous page position before handling route transition
-    if (prev) {
-      const prevY = getScrollY();
-      const prevX = window.scrollX || window.pageXOffset || 0;
-      const entry: ScrollEntry = { x: prevX, y: prevY, timestamp: Date.now() };
+    // Track Navigation Stack
+    const currentItem: HistoryStackItem = {
+      key: current.key,
+      pathname: current.pathname,
+      search: current.search,
+      timestamp: Date.now(),
+    };
 
-      keyPositionsRef.current[prev.key] = entry;
-      pathPositionsRef.current[prev.pathname] = entry;
-      if (prev.search) {
-        pathPositionsRef.current[prev.pathname + prev.search] = entry;
-      }
-      persistToSession();
-    }
-
-    // Update history stack
     if (navigationType === 'PUSH') {
-      historyStackRef.current.push(current.pathname);
-    } else if (navigationType === 'POP' && historyStackRef.current.length > 1) {
-      historyStackRef.current.pop();
+      historyStackRef.current.push(currentItem);
+      saveSessionHistoryStack(historyStackRef.current);
+    } else if (navigationType === 'POP') {
+      const existingIdx = historyStackRef.current.findIndex((item) => item.key === current.key);
+      if (existingIdx !== -1) {
+        historyStackRef.current = historyStackRef.current.slice(0, existingIdx + 1);
+      } else {
+        historyStackRef.current.push(currentItem);
+      }
+      saveSessionHistoryStack(historyStackRef.current);
+    } else if (navigationType === 'REPLACE') {
+      if (historyStackRef.current.length > 0) {
+        historyStackRef.current[historyStackRef.current.length - 1] = currentItem;
+      } else {
+        historyStackRef.current.push(currentItem);
+      }
+      saveSessionHistoryStack(historyStackRef.current);
     }
 
     prevLocationRef.current = {
@@ -184,7 +218,7 @@ export const ScrollRestoration: React.FC = () => {
     }
 
     // Case 2: In-place filter/search change on the SAME pathname (e.g. /pets?species=Dog)
-    // Maintain current scroll position so user's filter interactions don't bounce to top
+    // Maintain current scroll position so user's filter interactions don't jump to top
     if (prev && prev.pathname === current.pathname && prev.search !== current.search) {
       return;
     }
@@ -196,27 +230,26 @@ export const ScrollRestoration: React.FC = () => {
       return;
     }
 
-    // Case 4: Returning from a Detail/Profile page back to its Listing page
-    // (e.g., /pets/:id -> /pets, /adopter/requests/:id -> /adopter/requests, /provider/pets/:id -> /provider/pets)
+    // Case 4: Navigation Back (POP) or returning to parent listing/previous page in stack
+    const isPop = navigationType === 'POP';
+
     const isChildToParent = Boolean(
       prev &&
       prev.pathname !== current.pathname &&
-      prev.pathname.startsWith(current.pathname === '/' ? '///' : `${current.pathname}/`)
+      (prev.pathname.startsWith(current.pathname === '/' ? '///' : `${current.pathname}/`) ||
+       historyStackRef.current.some((item, idx) => idx < historyStackRef.current.length - 1 && item.pathname === current.pathname))
     );
-
-    // Case 5: Browser Back or Forward Button (POP navigation)
-    const isPop = navigationType === 'POP';
 
     // Determine target restoration position
     let targetPos: ScrollEntry | null = null;
 
     if (isPop) {
-      // 1. By history key for exact historical position
+      // 1. By unique history key for exact historical position in stack
       targetPos = keyPositionsRef.current[current.key] ||
                   pathPositionsRef.current[current.pathname + current.search] ||
                   pathPositionsRef.current[current.pathname] || null;
     } else if (isChildToParent) {
-      // 2. By path + search or path when returning from a detail page
+      // 2. By path + search or path when returning from a detail/child page
       targetPos = pathPositionsRef.current[current.pathname + current.search] ||
                   pathPositionsRef.current[current.pathname] || null;
     }
@@ -242,7 +275,7 @@ export const ScrollRestoration: React.FC = () => {
       const maxScroll = Math.max(0, scrollHeight - clientHeight);
 
       // Check if page height has expanded enough to satisfy target scroll position
-      if (scrollHeight >= targetY + 80 || maxScroll >= targetY) {
+      if (scrollHeight >= targetY + 60 || maxScroll >= targetY) {
         setScrollY(targetY, targetX);
         return true;
       }
@@ -260,7 +293,7 @@ export const ScrollRestoration: React.FC = () => {
         setScrollY(targetY, targetX);
         setTimeout(() => {
           isRestoringRef.current = false;
-        }, 50);
+        }, 60);
       });
       return;
     }
@@ -296,20 +329,20 @@ export const ScrollRestoration: React.FC = () => {
       resizeObserver.observe(document.body);
     }
 
-    // Polling interval check every 50ms as fallback
+    // Polling interval check every 40ms as fallback
     const intervalId = setInterval(() => {
       if (attemptScroll()) {
         clearInterval(intervalId);
         finish();
       }
-    }, 50);
+    }, 40);
 
-    // Safety timeout: stop observing after 2 seconds
+    // Safety timeout: stop observing after 2.5 seconds
     cleanupTimer = setTimeout(() => {
       clearInterval(intervalId);
       attemptScroll();
       finish();
-    }, 2000);
+    }, 2500);
   };
 
   const resetScrollToTop = () => {

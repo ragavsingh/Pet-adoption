@@ -5,6 +5,7 @@ import { Pet } from '../../types/pet';
 import { Button } from '../../components/common/Button';
 import { useToast } from '../../contexts/ToastContext';
 import { ArrowLeft, Save } from 'lucide-react';
+import { useSmartBack } from '../../hooks/useSmartBack';
 
 export const EditPetPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,7 @@ export const EditPetPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const handleBack = useSmartBack('/provider/pets');
 
   useEffect(() => {
     if (id) {
@@ -60,13 +62,14 @@ export const EditPetPage: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 text-left">
-      <Link
-        to="/provider/pets"
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-950"
+      <button
+        onClick={handleBack}
+        type="button"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-950 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Back to Provider Pets</span>
-      </Link>
+        <span>Back</span>
+      </button>
 
       <div className="bg-surface rounded-3xl p-8 border border-brand-200/80 shadow-card space-y-6">
         <h2 className="font-display text-2xl font-bold text-brand-950">

@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { realtimeSync } from '../../services/realtimeSync';
+import { useSmartBack } from '../../hooks/useSmartBack';
 
 export const PetDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +48,7 @@ export const PetDetailsPage: React.FC = () => {
   const { user, isAuthenticated, role } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const handleBack = useSmartBack('/pets');
 
   const handleAdoptClick = () => {
     if (!isAuthenticated || !user) {
@@ -161,19 +163,14 @@ export const PetDetailsPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 text-left">
       {/* Back and Breadcrumb */}
       <div className="flex items-center justify-between">
-        <Link
-          to="/pets"
-          onClick={(e) => {
-            if (window.history.length > 1) {
-              e.preventDefault();
-              navigate(-1);
-            }
-          }}
+        <button
+          onClick={handleBack}
+          type="button"
           className="inline-flex items-center gap-2 text-xs font-bold text-brand-700 hover:text-brand-950 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Find Pets</span>
-        </Link>
+        </button>
 
         <div className="flex items-center gap-2">
           <button

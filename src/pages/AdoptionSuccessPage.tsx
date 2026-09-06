@@ -11,6 +11,7 @@ import { AdoptionCertificate } from '../components/certificate/AdoptionCertifica
 import { Button } from '../components/common/Button';
 import { calculateTrialCountdown } from '../components/common/TrialCountdown';
 import { ArrowLeft, Home, Compass, Clock, Heart, Award, ArrowRight } from 'lucide-react';
+import { useSmartBack } from '../hooks/useSmartBack';
 
 export const AdoptionSuccessPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,7 @@ export const AdoptionSuccessPage: React.FC = () => {
   const [adoptionRecord, setAdoptionRecord] = useState<AdoptionRecord | null>(null);
   const [matchingRequest, setMatchingRequest] = useState<AdoptionRequest | null>(null);
   const [loading, setLoading] = useState(true);
+  const handleBack = useSmartBack(id ? `/pets/${id}` : '/pets');
 
   useEffect(() => {
     let isMounted = true;
@@ -109,19 +111,19 @@ export const AdoptionSuccessPage: React.FC = () => {
       {/* Back navigation */}
       <div className="print:hidden flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Link
-            to="/"
+          <button
+            onClick={handleBack}
+            type="button"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-950 px-3 py-1.5 rounded-xl bg-brand-100/60 hover:bg-brand-100 transition-colors"
           >
-            <Home className="w-4 h-4 text-brand-600" />
-            <span>Return to Home Page</span>
-          </Link>
+            <ArrowLeft className="w-4 h-4 text-brand-600" />
+            <span>Back</span>
+          </button>
 
           <Link
             to="/adopter/dashboard"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-900 px-3 py-1.5 rounded-xl hover:bg-brand-50 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
             <span>Dashboard</span>
           </Link>
         </div>
