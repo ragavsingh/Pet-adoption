@@ -160,9 +160,8 @@ export const AdminLayout: React.FC = () => {
             </form>
 
             <div className="pt-2 border-t border-brand-800 text-[11px] text-brand-400 text-center space-y-1">
-              <p>Security Key: <span className="font-mono text-emerald-400 font-semibold">admin2026</span></p>
               <p className="text-[10px] text-brand-500">
-                All platform actions, database queries, and audits are cryptographically signed.
+                All administrative actions, database queries, and audits are strictly restricted and monitored.
               </p>
             </div>
           </div>

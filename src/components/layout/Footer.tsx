@@ -72,11 +72,6 @@ export const Footer: React.FC = () => {
                   Help & Support Center
                 </Link>
               </li>
-              <li>
-                <Link to="/admin/dashboard" className="text-brand-400 hover:text-brand-200 transition-colors flex items-center gap-1">
-                  <span>Admin Oversight</span>
-                </Link>
-              </li>
             </ul>
           </div>
 
