@@ -317,7 +317,7 @@ export const LoginPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   className={`w-full pl-11 ${password.length > 0 ? 'pr-11' : 'pr-4'} py-3 rounded-2xl border border-brand-200 text-sm font-medium text-brand-950 focus:ring-2 focus:ring-brand-500`}
                 />
                 {password.length > 0 && (

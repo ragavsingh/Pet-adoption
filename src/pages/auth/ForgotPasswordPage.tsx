@@ -294,6 +294,7 @@ export const ForgotPasswordPage: React.FC = () => {
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter your new password"
                     minLength={8}
+                    autoComplete="new-password"
                     className="w-full pl-10 pr-10 py-2.5 rounded-2xl border border-brand-200 text-sm font-medium text-brand-950 focus:ring-2 focus:ring-brand-500"
                   />
                   <button
@@ -322,6 +323,7 @@ export const ForgotPasswordPage: React.FC = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter your new password"
                     minLength={8}
+                    autoComplete="new-password"
                     className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-brand-200 text-sm font-medium text-brand-950 focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
