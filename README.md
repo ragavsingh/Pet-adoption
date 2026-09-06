@@ -1,167 +1,166 @@
-# 🐾 PET ADOPTION — Frontend Platform
+# 🐾 Pawsome Companions — Full-Stack Pet Adoption & Foster-to-Own Platform
 
-**Academic Mini-Project (Semester V)**  
-*Department of Computer Science & Engineering, Quantum University, Roorkee*  
-**Team**: Raghav Singh, Shreyansh Tripathi, Rahul Kumar Sharma, Badal Kumar  
-**Supervisors**: Mr. Deepak Bhatt & Mr. Ankush
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%2015-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?style=flat-square&logo=vercel&logoColor=white)](https://vercel.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg?style=flat-square)](LICENSE)
+
+> **A mission-driven, full-stack digital platform connecting verified rescue providers and shelters with loving families.**  
+> Built with a **Foster-to-Own bonding philosophy**, robust PostgreSQL backend, and enterprise-grade Row-Level Security (RLS).
 
 ---
 
-## 📁 Systematic Project Structure (Easy & Non-Hectic to Edit)
+## 🌟 Executive Overview
 
-This project has been systematically organized so that any team member can easily locate and edit components, pages, services, styles, or mock data without confusion.
+Traditional pet adoption often suffers from fragmented screening, high return rates, and a lack of structured transition support. **Pawsome Companions** solves this through a guided, digital-first adoption ecosystem featuring:
+
+- **Foster-to-Own Bonding Trials**: A structured 14-day trial period before legal adoption, complete with daily welfare journals, live countdowns, extension requests, and consensus milestones.
+- **Multi-Role Portals**: Tailored interfaces and workflows for **Adopters**, **Verified Rescue Shelters / Providers**, and **Platform Administrators**.
+- **Official Adoption Certificates**: High-resolution, printable certificates generated upon adoption completion with confetti celebrations and PNG download options.
+- **Full-Stack Cloud Architecture**: Powered by Supabase PostgreSQL with stored procedures (PL/pgSQL RPCs), Row-Level Security (RLS), realtime sync, and transactional email infrastructure.
+
+---
+
+## 🚀 Key Features
+
+### 🐶 Adopter Experience
+- **Interactive Pet Discovery**: Search and filter by species, breed, size, apartment compatibility, good with children/dogs/cats, and vaccination status.
+- **Multi-Step Application & Verification**: Structured lifestyle questionnaire evaluating home environment, prior experience, and schedule commitment.
+- **Foster-to-Own Dashboard**: Monitor your 14-day trial in real-time with day-by-day countdowns, daily care journal entries, and trial extension requests.
+- **"Make It Official ❤️" Finalization**: Complete the trial, sign the adoption pledge, and unlock your personalized Certificate of Adoption.
+- **Notification Inbox & Saved Pets**: Real-time notifications for status updates and a persistent favorites system.
+
+### 🏠 Rescue Provider & Shelter Portal
+- **8-Step Pet Intake Wizard**: Add pet listings with high-res photo uploads, personality tags, care routines, and temperament stats.
+- **Applicant Screening Drawer**: Review applications, inspect lifestyle answers, communicate with applicants, and initiate 14-day foster trials.
+- **Trial & Placement Oversight**: Track active trials, review journal updates, approve extension requests, or finalize completed adoptions.
+- **Shelter Verification**: Build public trust through audited organization credentials and verified rescue badges.
+
+### 🛡️ Platform Administration & Governance
+- **Platform Analytics**: Real-time metrics tracking total listings, active trials, finalized adoptions, and pending verifications.
+- **Provider Verification Queue**: Review shelter tax IDs, shelter facilities, and credentials before approving public listings.
+- **Welfare Report Triage**: Handle user-flagged pet listings and rescue inquiries with resolve/dismiss workflows.
+- **Security & RLS Hardening**: Database-level security ensuring users only access authorized records.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend Framework** | [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
+| **Styling & UI** | [Tailwind CSS](https://tailwindcss.com/) with custom warm palette (Dark Brown, Beige, Cream, Amber) |
+| **Icons & Media** | [Lucide React](https://lucide.dev/), [Canvas-Confetti](https://www.npmjs.com/package/canvas-confetti), [html2canvas](https://html2canvas.hertzen.com/) |
+| **Build & Bundling** | [Vite 5](https://vitejs.dev/) |
+| **Database & Auth** | [Supabase](https://supabase.com/) (PostgreSQL 15, Row-Level Security, RPCs, Auth, Storage) |
+| **Hosting & CI/CD** | [Vercel](https://vercel.com/) with automated GitHub branch deployments and SPA routing |
+
+---
+
+## 📁 Project Structure
 
 ```text
 PET/
 ├── public/                       # Static brand assets & logo
-│   ├── logo.png                  # High-resolution brand logo (Dark brown paw + warm beige face)
-│   ├── logo-icon.png             # Paw-face favicon & app icon
-│   ├── logo-on-dark.png          # Logo variant for dark backgrounds
-│   └── logo-on-beige.png         # Logo variant for beige backgrounds
+│   ├── logo.png                  # High-resolution brand logo
+│   └── logo-icon.png             # Paw-face favicon & app icon
 │
 ├── src/
-│   ├── components/               # All UI Components (Categorized by domain)
-│   │   ├── adopter/              # Components used exclusively by Adopters
-│   │   │   ├── AdoptionRequestModal.tsx   # Multi-step application submission popup
-│   │   │   ├── FosterTrialCard.tsx        # 14-day Foster-to-Own countdown & journal
-│   │   │   └── RequestTimeline.tsx        # 4-stage adoption progression timeline
-│   │   │
-│   │   ├── certificate/          # Official Adoption Milestone
-│   │   │   └── AdoptionCertificate.tsx    # Printable Certificate of Adoption with confetti
-│   │   │
-│   │   ├── common/               # Universal Reusable Components
-│   │   │   ├── Button.tsx                 # Pill-shaped brand buttons (variants: primary, secondary, cream, outline, ghost)
-│   │   │   ├── DemoRoleBar.tsx            # Floating 1-click role switcher (Adopter, Provider, Admin, Visitor)
-│   │   │   ├── Logo.tsx                   # Brand logo with text and tagline
-│   │   │   ├── Modal.tsx                  # Accessible dialog modal
-│   │   │   ├── PetCard.tsx                # Pet card with photo, badges, tags, and heart favorite
-│   │   │   ├── ReportModal.tsx            # Welfare report dialog
-│   │   │   └── StatusBadge.tsx            # Pill status badges (Available, Adopted, Pending, etc.)
-│   │   │
-│   │   ├── discovery/            # Pet Search & Filtering
-│   │   │   ├── PetFilterBar.tsx           # Desktop sticky filter bar (species, breed, size, habits)
-│   │   │   └── PetFilterDrawer.tsx        # Mobile slide-out filter drawer
-│   │   │
-│   │   ├── layout/               # Page wrappers & navigation
-│   │   │   ├── Navbar.tsx                 # Sticky blur navigation with profile & notification preview
-│   │   │   ├── Footer.tsx                 # 4-column footer with academic citation
-│   │   │   ├── PublicLayout.tsx           # Layout for landing & visitor pages
-│   │   │   ├── AdopterLayout.tsx          # Layout for Adopter portal with sub-nav
-│   │   │   ├── ProviderLayout.tsx         # Layout for Provider portal with sub-nav
-│   │   │   └── AdminLayout.tsx            # Layout for Admin governance portal
-│   │   │
-│   │   └── provider/             # Components used exclusively by Pet Providers
-│   │       ├── AddPetWizard.tsx           # 8-step pet listing wizard with photo previews
-│   │       └── RequestReviewDrawer.tsx    # Slide-over drawer to review & approve applicants
+│   ├── components/               # Domain-driven modular components
+│   │   ├── adopter/              # FosterTrialCard, AdoptionRequestModal, MakeOfficialModal
+│   │   ├── provider/             # AddPetWizard, RequestReviewDrawer
+│   │   ├── admin/                # Admin review drawers, user tables, audit queues
+│   │   ├── certificate/          # AdoptionCertificate (printable & PNG download)
+│   │   ├── common/               # Buttons, UserAvatar, Modal, StatusBadge, TrialCountdown
+│   │   ├── discovery/            # PetFilterBar, PetFilterDrawer, search engine
+│   │   └── layout/               # Navbar, Footer, AdopterLayout, ProviderLayout, AdminLayout
 │   │
-│   ├── contexts/                 # Global UI State Providers
-│   │   ├── AuthContext.tsx       # Simulates user login/logout and role switching
-│   │   ├── FavoritesContext.tsx  # Manages saved/favorited pets with heart animation
-│   │   ├── NotificationsContext.tsx # Manages in-app notification count and read states
-│   │   └── ToastContext.tsx      # Slide-in toast alerts (success, error, heart, info)
-│   │
-│   ├── data/                     # Mock Database (50+ realistic pets)
-│   │   └── mockData.ts           # 50 fully detailed Indian dog & cat profiles, demo users, requests
-│   │
-│   ├── pages/                    # Routed Application Pages
-│   │   ├── public/               # Public Visitor Pages
-│   │   │   ├── HomePage.tsx               # 13-section landing page
-│   │   │   ├── PetsPage.tsx               # Pet discovery catalog with filters & search
-│   │   │   ├── PetDetailsPage.tsx         # Full pet profile, gallery, health, and provider insight
-│   │   │   ├── HowItWorksPage.tsx         # 4-step Foster-to-Own guide
-│   │   │   ├── AboutPage.tsx              # Mission, zero-breeder policy, and university credits
-│   │   │   ├── ForProvidersPage.tsx       # Shelter tools and verification guide
-│   │   │   └── ContactPage.tsx            # Contact form and emergency rescue info
-│   │   │
-│   │   ├── auth/                 # Authentication Pages
-│   │   │   ├── LoginPage.tsx              # Login page with 1-click demo fill buttons
-│   │   │   ├── SignupPage.tsx             # Signup with "I WANT TO ADOPT" vs "I WANT TO LIST" fork
-│   │   │   ├── ForgotPasswordPage.tsx     # Password recovery form
-│   │   │   └── ResetPasswordPage.tsx      # New password creation
-│   │   │
-│   │   ├── adopter/              # Adopter Portal Pages
-│   │   │   ├── AdopterDashboard.tsx       # "My Adoption Journey" with stats & active trial
-│   │   │   ├── AdopterProfilePage.tsx     # 80% completion indicator & lifestyle edit form
-│   │   │   ├── AdopterFavoritesPage.tsx   # Saved pets gallery
-│   │   │   ├── AdopterRequestsPage.tsx    # List of submitted adoption applications
-│   │   │   ├── AdopterRequestDetailsPage.tsx # Request timeline, notes, & foster countdown
-│   │   │   ├── AdopterAdoptionsPage.tsx   # Completed adoptions & certificate links
-│   │   │   ├── AdopterNotificationsPage.tsx # Notification inbox with "Mark All Read"
-│   │   │   └── AdopterSettingsPage.tsx    # Privacy and alert preferences
-│   │   │
-│   │   ├── provider/             # Pet Provider Portal Pages
-│   │   │   ├── ProviderDashboard.tsx      # "Good evening, Sarah 👋" with stats & quick actions
-│   │   │   ├── ProviderPetsPage.tsx       # Manage listings with Pause, Resume, Delete
-│   │   │   ├── AddPetPage.tsx             # Page hosting the 8-step Add Pet Wizard
-│   │   │   ├── EditPetPage.tsx            # Edit pet listing details
-│   │   │   ├── ProviderRequestsPage.tsx   # Incoming applications list & review drawer trigger
-│   │   │   ├── ProviderAdoptionsPage.tsx  # Completed adoptions by this provider
-│   │   │   ├── ProviderProfilePage.tsx    # Verified rescue NGO profile
-│   │   │   ├── ProviderNotificationsPage.tsx # Provider alert notifications
-│   │   │   └── ProviderSettingsPage.tsx   # Shelter intake criteria & video verification
-│   │   │
-│   │   ├── admin/                # Admin Portal Pages
-│   │   │   ├── AdminDashboard.tsx         # 9 platform metrics labeled DEMO DATA & charts
-│   │   │   ├── AdminUsersPage.tsx         # User table (adopters and shelters)
-│   │   │   ├── AdminProvidersPage.tsx     # Shelter verification queue
-│   │   │   ├── AdminPetsPage.tsx          # All pets overview
-│   │   │   ├── AdminRequestsPage.tsx      # Adoption request audit log
-│   │   │   ├── AdminReportsPage.tsx       # Welfare reports with Resolve & Dismiss buttons
-│   │   │   └── AdminSettingsPage.tsx      # 1-click button to reset & reseed mock data
-│   │   │
-│   │   └── AdoptionSuccessPage.tsx # "IT'S OFFICIAL ❤️" certificate celebration
-│   │
-│   ├── services/                 # Business Logic & Backend-Ready Interfaces
-│   │   ├── petService.ts         # Pet search, filters, CRUD, and status updates
-│   │   ├── adoptionService.ts    # Request lifecycle, 14-day foster trials, journal notes
-│   │   ├── favoriteService.ts    # Favorites toggling
-│   │   ├── notificationService.ts # In-app alerts
-│   │   └── reportService.ts      # Flagged listings moderation
-│   │
-│   ├── types/                    # Clean TypeScript Definitions
-│   │   ├── pet.ts                # Pet, species, health, stats, provider insight types
-│   │   ├── user.ts               # User, AdopterProfile, ProviderProfile types
-│   │   ├── adoptionRequest.ts    # AdoptionRequest, Trial, TimelineStep types
-│   │   ├── notification.ts       # AppNotification types
-│   │   └── report.ts             # ReportItem types
-│   │
-│   ├── App.tsx                   # Master router connecting all 27+ routes
-│   ├── main.tsx                  # React DOM entry point with all Context providers
-│   └── index.css                 # Tailwind CSS & custom animations
+│   ├── contexts/                 # Global state providers (Auth, Favorites, Notifications, Toast)
+│   ├── data/                     # Seeded companion data & mock fallbacks
+│   ├── lib/                      # Supabase client configuration & TypeScript DB types
+│   ├── pages/                    # 27+ routed pages across public, adopter, provider, & admin
+│   ├── services/                 # Backend API services (adoption, pet, profile, email, sync)
+│   ├── types/                    # Core TypeScript models (Pet, User, AdoptionRequest, Trial)
+│   ├── utils/                    # Certificate downloader, image optimization, avatar helpers
+│   ├── App.tsx                   # Master client-side router
+│   ├── main.tsx                  # Application entrypoint
+│   └── index.css                 # Tailwind directives & design tokens
 │
-├── package.json                  # Dependencies: React 18, Vite, Tailwind, Lucide, Canvas-Confetti
-└── tailwind.config.js            # Custom color palette (Dark Brown, Warm Beige, Cream, Off-White)
+├── supabase/
+│   ├── migrations/               # PostgreSQL schema, RLS policies, triggers, and RPCs
+│   └── functions/                # Deno Edge Functions for transactional emails
+│
+├── vercel.json                   # Single Page Application (SPA) rewrite rules
+├── package.json                  # Dependencies & scripts
+└── tailwind.config.js            # Design tokens & color system
 ```
 
 ---
 
-## ⚡ How to Run the Project
+## ⚡ Getting Started
 
-Open a terminal (PowerShell or Command Prompt) inside this `PET` directory:
+### Prerequisites
+- [Node.js](https://nodejs.org/) (version 18.0 or higher)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
 
-```bash
-# 1. Start the development server
-npm run dev
+### Installation & Local Setup
 
-# 2. Build for production (checks for zero TypeScript errors)
-npm run build
-```
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/ragavsingh/Pet-adoption.git
+   cd Pet-adoption
+   ```
 
-The app will be available at **`http://localhost:5173/`**.
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment Variables**:
+   Create a `.env.local` file in the root directory:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+   *(The application automatically operates in demo mode if environment variables are omitted).*
+
+4. **Start the Development Server**:
+   ```bash
+   npm run dev
+   ```
+   Open **`http://localhost:5173`** in your browser.
+
+5. **Build for Production**:
+   ```bash
+   npm run build
+   ```
 
 ---
 
-## 🎯 How to Make Changes Without Headache
+## 🚢 Deployment (Vercel)
 
-| If you want to change... | Go to this file: |
-| :--- | :--- |
-| **Add / Edit Pets, Descriptions, Photos** | `src/data/mockData.ts` |
-| **Colors, Brand Palette, Shadows** | `tailwind.config.js` |
-| **Navbar Links or Header Look** | `src/components/layout/Navbar.tsx` |
-| **Footer, Team Names, Supervisors** | `src/components/layout/Footer.tsx` or `src/pages/public/AboutPage.tsx` |
-| **Landing Page Content & Hero** | `src/pages/public/HomePage.tsx` |
-| **How It Works Steps** | `src/pages/public/HowItWorksPage.tsx` |
-| **Pet Details Layout & Provider's Insight**| `src/pages/public/PetDetailsPage.tsx` |
-| **Certificate of Adoption Design** | `src/components/certificate/AdoptionCertificate.tsx` |
-| **Role Switcher Floating Bar** | `src/components/common/DemoRoleBar.tsx` |
-| **Backend Integration (Connecting Supabase)**| `src/services/` (Replace `localStorage` calls with `supabase` calls) |
+This project is pre-configured for instant deployment on [Vercel](https://vercel.com/):
+
+1. Import the repository on Vercel (`ragavsingh/Pet-adoption`).
+2. Framework Preset: **Vite**.
+3. Under **Environment Variables**, add:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Click **Deploy**.
+5. Continuous Deployment is automatically enabled — any `git push` to `main` instantly triggers a live production release.
+
+---
+
+## 👤 Author
+
+**Raghav Singh**  
+GitHub: [@ragavsingh](https://github.com/ragavsingh)
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) — feel free to adapt and build upon it for animal rescue and welfare initiatives.
