@@ -19,6 +19,10 @@ import {
   LayoutDashboard,
   Shield,
   Search,
+  BookOpen,
+  Home,
+  Phone,
+  Sparkles,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -99,11 +103,11 @@ export const Navbar: React.FC = () => {
   }, [notifDropdownOpen, userDropdownOpen]);
 
   const navLinks = [
-    { name: 'Find Pets', path: '/pets' },
-    { name: 'How It Works', path: '/how-it-works' },
-    { name: 'About', path: '/about' },
-    { name: 'For Providers', path: '/for-providers' },
-    { name: 'Contact', path: '/contact' },
+    { name: 'Find Pets', path: '/pets', icon: Search },
+    { name: 'How It Works', path: '/how-it-works', icon: BookOpen },
+    { name: 'About', path: '/about', icon: Sparkles },
+    { name: 'For Providers', path: '/for-providers', icon: Home },
+    { name: 'Contact', path: '/contact', icon: Phone },
   ];
 
   const getDashboardLink = () => {
@@ -121,8 +125,20 @@ export const Navbar: React.FC = () => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        {/* Brand Logo */}
-        <Logo size="md" />
+        {/* Left Side: Mobile 3-Lines Hamburger (Mobile only) + Brand Logo */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden w-9 h-9 rounded-xl bg-surface border border-brand-200 flex items-center justify-center text-brand-800 hover:bg-brand-100/70 transition-colors shadow-xs shrink-0 cursor-pointer"
+            aria-label="Open navigation drawer"
+          >
+            <Menu className="w-5 h-5 text-brand-800" />
+          </button>
+
+          {/* Brand Logo */}
+          <Logo size="md" />
+        </div>
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-1.5 lg:gap-2">
@@ -411,119 +427,200 @@ export const Navbar: React.FC = () => {
               </Link>
             </div>
           )}
-
-          {/* Mobile Menu Hamburger */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-surface border border-brand-200 flex items-center justify-center text-brand-800 hover:bg-brand-50 shrink-0"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-          >
-            {mobileMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" />}
-          </button>
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Slide-Out Side Drawer (from the left, matching Admin Drawer style) */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-surface border-b border-brand-200 px-4 pt-3 pb-6 shadow-soft-lg animate-slide-down">
-          <div className="flex flex-col gap-2">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.path}
-                to={link.path}
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop with blur */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Drawer Sidebar */}
+          <div className="relative z-10 w-72 sm:w-80 h-full bg-brand-950 text-brand-100 border-r border-brand-800/80 shadow-2xl flex flex-col animate-slide-right select-none overflow-y-auto">
+            {/* Drawer Header */}
+            <div className="p-4 sm:p-5 border-b border-brand-800/80 flex items-center justify-between">
+              <Link
+                to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `px-4 py-2.5 rounded-2xl text-sm font-semibold transition-colors ${
-                    isActive
-                      ? 'bg-brand-100 text-brand-950 font-bold'
-                      : 'text-brand-800 hover:bg-brand-50'
-                  }`
-                }
+                className="flex items-center gap-2.5 group"
               >
-                {link.name}
-              </NavLink>
-            ))}
+                <div className="w-10 h-10 rounded-2xl bg-brand-800/70 border border-brand-700/80 flex items-center justify-center p-1.5 group-hover:scale-105 transition-transform shadow-inner shrink-0">
+                  <img src="/logo-icon.png" alt="Logo" className="w-full h-full object-contain" />
+                </div>
+                <div>
+                  <span className="font-display text-sm font-extrabold text-white tracking-tight block">
+                    PET ADOPTION
+                  </span>
+                  <span className="text-[9px] uppercase tracking-widest font-extrabold text-brand-400 block -mt-0.5">
+                    Foster-to-Own
+                  </span>
+                </div>
+              </Link>
 
-            <hr className="my-2 border-brand-100" />
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-brand-900 text-brand-400 hover:text-white transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            {isAuthenticated && user ? (
-              <div className="space-y-2">
-                <Link
-                  to={getDashboardLink()}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-brand-700 text-white font-bold text-sm"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span>Go to {role.toUpperCase()} Dashboard</span>
-                </Link>
+            {/* Sub-header status badge */}
+            <div className="px-5 py-2.5 bg-brand-900/40 border-b border-brand-800/60 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-semibold text-brand-200 text-[11px]">
+                  Verified Welfare Network
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold text-brand-400 bg-brand-900/80 px-2 py-0.5 rounded-md border border-brand-800">
+                Pan-India
+              </span>
+            </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-1">
+            {/* Navigation Section */}
+            <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+              <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-2">
+                Navigation
+              </p>
+              {navLinks.map((link) => {
+                const IconComp = link.icon;
+                return (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? 'bg-brand-700 text-white font-bold shadow-sm'
+                          : 'text-brand-300 hover:text-white hover:bg-brand-900/60'
+                      }`
+                    }
+                  >
+                    <IconComp className="w-4 h-4 text-brand-400 shrink-0" />
+                    <span>{link.name}</span>
+                  </NavLink>
+                );
+              })}
+
+              {/* User Account / Actions */}
+              {isAuthenticated && user ? (
+                <div className="pt-4 mt-4 border-t border-brand-800/80 space-y-1.5">
+                  <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-2">
+                    My Account ({role.toUpperCase()})
+                  </p>
+
+                  <Link
+                    to={getDashboardLink()}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md transition-all"
+                  >
+                    <LayoutDashboard className="w-4 h-4 shrink-0" />
+                    <span>Go to Dashboard</span>
+                  </Link>
+
                   <Link
                     to={role === 'provider' ? '/provider/favorites' : '/adopter/favorites'}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-900 font-semibold text-xs border border-brand-200"
+                    className="flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-semibold text-brand-300 hover:text-white hover:bg-brand-900/60 transition-colors"
                   >
-                    <Heart className="w-4 h-4 text-rose-600" />
-                    <span>Favorites ({favoriteCount})</span>
+                    <div className="flex items-center gap-3">
+                      <Heart className="w-4 h-4 text-rose-400 shrink-0" />
+                      <span>Saved Favorites</span>
+                    </div>
+                    {favoriteCount > 0 && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        {favoriteCount}
+                      </span>
+                    )}
                   </Link>
 
                   <Link
                     to={role === 'provider' ? '/provider/notifications' : role === 'admin' ? '/admin/requests' : '/adopter/notifications'}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-900 font-semibold text-xs border border-brand-200"
+                    className="flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-semibold text-brand-300 hover:text-white hover:bg-brand-900/60 transition-colors"
                   >
-                    <Bell className="w-4 h-4 text-brand-700" />
-                    <span>Alerts ({unreadCount})</span>
+                    <div className="flex items-center gap-3">
+                      <Bell className="w-4 h-4 text-brand-400 shrink-0" />
+                      <span>Notifications</span>
+                    </div>
+                    {unreadCount > 0 && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
-                </div>
 
-                <div className="pt-1 flex flex-col gap-1.5">
                   {role === 'admin' && (
                     <Link
                       to="/admin"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl text-brand-700 bg-brand-50 hover:bg-brand-100 font-semibold text-xs border border-brand-200 transition-colors"
+                      className="flex items-center gap-3 px-3.5 py-2 rounded-2xl text-xs font-semibold text-emerald-300 hover:text-white hover:bg-emerald-950/60 border border-emerald-800/60 transition-colors"
                     >
-                      <Shield className="w-3.5 h-3.5 text-brand-600" />
+                      <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
                       <span>Admin Portal</span>
                     </Link>
                   )}
+                </div>
+              ) : (
+                <div className="pt-4 mt-4 border-t border-brand-800/80 space-y-2">
+                  <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-1">
+                    Get Started
+                  </p>
+                  <Link
+                    to="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl text-xs font-bold bg-brand-700 hover:bg-brand-600 text-white shadow-soft transition-all"
+                  >
+                    <span>Create Account</span>
+                  </Link>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-2xl text-xs font-semibold text-brand-200 hover:text-white hover:bg-brand-900/80 border border-brand-800 transition-colors"
+                  >
+                    <span>Log In</span>
+                  </Link>
+                </div>
+              )}
+            </div>
 
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-brand-800/80 bg-brand-900/30">
+              {isAuthenticated && user ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <UserAvatar user={user} size="sm" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{user.name}</p>
+                      <p className="text-[10px] text-brand-400 truncate">{user.email}</p>
+                    </div>
+                  </div>
                   <button
                     onClick={() => {
                       logout();
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-2xl text-rose-700 bg-rose-50 hover:bg-rose-100 font-semibold text-xs transition-colors"
+                    className="p-2 rounded-xl text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 transition-colors shrink-0 cursor-pointer"
+                    title="Log Out"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Log Out</span>
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 pt-2">
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1"
-                >
-                  <Button variant="outline" size="md" className="w-full font-bold">
-                    Log In
-                  </Button>
-                </Link>
-                <Link
-                  to="/signup"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1"
-                >
-                  <Button variant="primary" size="md" className="w-full font-bold">
-                    Get Started
-                  </Button>
-                </Link>
-              </div>
-            )}
+              ) : (
+                <div className="text-center text-[10px] text-brand-400 space-y-1">
+                  <p className="font-semibold text-brand-300">🐾 Zero Breeder Policy • Ethical Adoption</p>
+                  <p className="text-brand-500">© 2026 Pet Adoption Platform</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

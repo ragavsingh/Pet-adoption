@@ -65,11 +65,16 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(-12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        slideRight: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
       },
       animation: {
         'heart-pulse': 'heartPulse 0.35s ease-in-out',
         'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
         'slide-down': 'slideDown 0.3s ease-out',
+        'slide-right': 'slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
       }
     },
   },
