@@ -15,13 +15,13 @@ export const Logo: React.FC<LogoProps> = ({
   size = 'md',
 }) => {
   const sizeClasses = {
-    sm: { img: 'h-9 w-9', text: 'text-base', sub: 'text-[10px]' },
-    md: { img: 'h-11 w-11', text: 'text-xl', sub: 'text-xs' },
-    lg: { img: 'h-16 w-16', text: 'text-2xl md:text-3xl', sub: 'text-sm' },
+    sm: { img: 'h-8 w-8 sm:h-9 sm:w-9', text: 'text-sm sm:text-base', sub: 'text-[10px]' },
+    md: { img: 'h-9 w-9 sm:h-11 sm:w-11', text: 'text-base sm:text-xl', sub: 'text-xs' },
+    lg: { img: 'h-12 w-12 sm:h-16 sm:w-16', text: 'text-xl sm:text-2xl md:text-3xl', sub: 'text-sm' },
   }[size];
 
   return (
-    <Link to="/" className={`inline-flex items-center gap-3 group select-none ${className}`}>
+    <Link to="/" className={`inline-flex items-center gap-2 sm:gap-3 group select-none ${className}`}>
       {/* Brand Paw Icon with Face from original logo */}
       <div className="relative shrink-0 transition-transform duration-300 group-hover:scale-105">
         <img
@@ -31,7 +31,7 @@ export const Logo: React.FC<LogoProps> = ({
         />
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col justify-center">
         <span
           className={`font-display font-extrabold tracking-tight uppercase transition-colors leading-none ${sizeClasses.text} ${
             variant === 'light'
@@ -43,7 +43,7 @@ export const Logo: React.FC<LogoProps> = ({
         </span>
         {showTagline && (
           <span
-            className={`font-medium italic tracking-wide mt-0.5 ${sizeClasses.sub} ${
+            className={`font-medium italic tracking-wide mt-0.5 hidden sm:block ${sizeClasses.sub} ${
               variant === 'light' ? 'text-brand-300/80' : 'text-brand-600/90'
             }`}
           >
