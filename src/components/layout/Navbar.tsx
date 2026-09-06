@@ -14,6 +14,7 @@ import {
   X,
   User as UserIcon,
   ChevronDown,
+  ChevronRight,
   LogOut,
   PlusCircle,
   LayoutDashboard,
@@ -61,7 +62,7 @@ export const Navbar: React.FC = () => {
 
   // Standard dropdown behavior: close on outside click, Escape key, or page scrolling
   useEffect(() => {
-    if (!notifDropdownOpen && !userDropdownOpen) return;
+    if (!notifDropdownOpen && !userDropdownOpen && !mobileMenuOpen) return;
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node | null;
@@ -77,7 +78,7 @@ export const Navbar: React.FC = () => {
     // Close immediately when user starts scrolling the page (mouse wheel, touch drag, trackpad, or window scroll)
     const handleScrollOrMove = (event: Event) => {
       const target = event.target as Node | null;
-      // If the scroll/wheel/touch interaction happened INSIDE the dropdown (e.g. scrolling the notifications list), keep it open!
+      // If the scroll/wheel/touch interaction happened INSIDE the dropdown, keep it open!
       if (notifDropdownOpen && notifRef.current && target && notifRef.current.contains(target)) {
         return;
       }
@@ -94,6 +95,7 @@ export const Navbar: React.FC = () => {
       if (event.key === 'Escape') {
         setNotifDropdownOpen(false);
         setUserDropdownOpen(false);
+        setMobileMenuOpen(false);
       }
     };
 
@@ -112,14 +114,14 @@ export const Navbar: React.FC = () => {
       window.removeEventListener('wheel', handleScrollOrMove);
       window.removeEventListener('touchmove', handleScrollOrMove);
     };
-  }, [notifDropdownOpen, userDropdownOpen]);
+  }, [notifDropdownOpen, userDropdownOpen, mobileMenuOpen]);
 
   const navLinks = [
-    { name: 'Find Pets', path: '/pets', icon: Search },
-    { name: 'How It Works', path: '/how-it-works', icon: BookOpen },
-    { name: 'About', path: '/about', icon: Sparkles },
-    { name: 'For Providers', path: '/for-providers', icon: Home },
-    { name: 'Contact', path: '/contact', icon: Phone },
+    { name: 'Find Pets', path: '/pets', icon: Search, desc: 'Explore dogs, cats & companions' },
+    { name: 'How It Works', path: '/how-it-works', icon: BookOpen, desc: '14-day foster bonding trial' },
+    { name: 'About', path: '/about', icon: Sparkles, desc: 'Our mission & welfare pledge' },
+    { name: 'For Providers', path: '/for-providers', icon: Home, desc: 'List rescues & manage requests' },
+    { name: 'Contact', path: '/contact', icon: Phone, desc: 'Support & community team' },
   ];
 
   const getDashboardLink = () => {
@@ -427,14 +429,6 @@ export const Navbar: React.FC = () => {
             </>
           ) : (
             <>
-              {/* Mobile Right Action: Compact Log In button (Mobile only, < md) */}
-              <Link
-                to="/login"
-                className="md:hidden inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold text-brand-800 bg-surface/90 border border-brand-200 hover:border-brand-400 hover:bg-brand-100/70 transition-all shadow-xs shrink-0"
-              >
-                Log In
-              </Link>
-
               {/* Desktop Auth Buttons (md: and larger, 100% preserved) */}
               <div className="hidden md:flex items-center gap-2">
                 <Link to="/login">
@@ -453,34 +447,34 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Slide-Out Navigation Panel (Mobile only, < md) */}
+      {/* Mobile Slide-Out Full-Height Navigation Drawer (Mobile only, < md) */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-fade-in"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Slide-out Panel with Website's Visual Branding & Colors */}
-          <div className="relative z-10 w-72 sm:w-80 max-w-[85vw] h-full bg-surface text-brand-950 border-r border-brand-200/80 shadow-2xl flex flex-col animate-slide-right select-none">
-            {/* Panel Header */}
-            <div className="p-4 sm:p-5 border-b border-brand-100 flex items-center justify-between bg-surface-soft/80">
+          {/* Full-Height Drawer from Left with Platform Branding */}
+          <div className="relative z-10 w-[86vw] sm:w-96 max-w-[380px] h-full bg-[#FAF8F5] text-brand-950 border-r border-brand-200/90 shadow-2xl flex flex-col animate-slide-right select-none overflow-hidden">
+            {/* Drawer Header */}
+            <div className="p-4 sm:p-5 border-b border-brand-200/70 flex items-center justify-between bg-surface/80 backdrop-blur-xs">
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 group"
+                className="flex items-center gap-3 group"
               >
-                <div className="w-10 h-10 rounded-2xl bg-surface border border-brand-200 flex items-center justify-center p-1.5 group-hover:scale-105 transition-transform shadow-xs shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-surface border border-brand-200 flex items-center justify-center p-2 group-hover:scale-105 transition-transform shadow-xs shrink-0">
                   <img src="/logo-icon.png" alt="Logo" className="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <span className="font-display text-sm font-extrabold text-brand-950 tracking-tight block">
+                  <span className="font-display text-base font-extrabold text-brand-950 tracking-tight block">
                     PET ADOPTION
                   </span>
-                  <span className="text-[10px] uppercase tracking-wider font-extrabold text-brand-600 block -mt-0.5">
-                    Foster-to-Own
+                  <span className="text-[11px] uppercase tracking-wider font-extrabold text-brand-600 block -mt-0.5">
+                    Foster-to-Own Platform
                   </span>
                 </div>
               </Link>
@@ -488,30 +482,30 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-9 h-9 rounded-xl bg-surface border border-brand-200 flex items-center justify-center text-brand-600 hover:text-brand-950 hover:bg-brand-100/70 transition-colors shadow-xs cursor-pointer"
-                aria-label="Close menu"
+                className="w-10 h-10 rounded-2xl bg-surface border border-brand-200 flex items-center justify-center text-brand-700 hover:text-brand-950 hover:bg-brand-100/70 transition-colors shadow-xs cursor-pointer active:scale-95"
+                aria-label="Close navigation drawer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Sub-header status pill */}
-            <div className="px-4 py-2 bg-brand-50 border-b border-brand-100/80 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-semibold text-brand-800 text-[11px]">
+            <div className="px-4 py-2.5 bg-brand-100/50 border-b border-brand-200/60 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-bold text-brand-800 text-[11px]">
                   Verified Foster Network
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-brand-600 bg-surface px-2 py-0.5 rounded-full border border-brand-200">
-                Pan-India
+              <span className="text-[10px] font-extrabold text-brand-700 bg-surface px-2.5 py-0.5 rounded-full border border-brand-200 shadow-xs">
+                100% Ethical
               </span>
             </div>
 
             {/* Navigation Links List */}
-            <div className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-              <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-400 mb-2">
-                Explore Platform
+            <div className="flex-1 px-3.5 py-4 space-y-2 overflow-y-auto">
+              <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-1.5">
+                Explore Navigation
               </p>
               {navLinks.map((link) => {
                 const IconComp = link.icon;
@@ -521,46 +515,77 @@ export const Navbar: React.FC = () => {
                     to={link.path}
                     onClick={() => setMobileMenuOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
+                      `flex items-center justify-between p-3 rounded-2xl border transition-all ${
                         isActive
-                          ? 'bg-brand-700 text-white font-bold shadow-soft'
-                          : 'text-brand-800 hover:text-brand-950 hover:bg-brand-100/60'
+                          ? 'bg-brand-700 border-brand-700 text-white shadow-soft font-bold'
+                          : 'bg-surface border-brand-200/70 text-brand-900 hover:bg-brand-50 hover:border-brand-300 shadow-xs'
                       }`
                     }
                   >
-                    <IconComp className="w-4 h-4 shrink-0" />
-                    <span>{link.name}</span>
+                    {({ isActive }) => (
+                      <>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                              isActive
+                                ? 'bg-white/15 text-white'
+                                : 'bg-brand-100/70 border border-brand-200/60 text-brand-800'
+                            }`}
+                          >
+                            <IconComp className="w-5 h-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className={`block text-xs font-bold leading-tight ${isActive ? 'text-white' : 'text-brand-950'}`}>
+                              {link.name}
+                            </span>
+                            {link.desc && (
+                              <span className={`block text-[11px] leading-tight mt-0.5 truncate ${isActive ? 'text-brand-100' : 'text-brand-500'}`}>
+                                {link.desc}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight className={`w-4 h-4 shrink-0 ml-2 ${isActive ? 'text-white/80' : 'text-brand-400'}`} />
+                      </>
+                    )}
                   </NavLink>
                 );
               })}
 
-              {/* User Account or Auth Actions */}
+              {/* User Account or Auth Actions inside Drawer */}
               {isAuthenticated && user ? (
-                <div className="pt-4 mt-4 border-t border-brand-100 space-y-1.5">
-                  <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-400 mb-2">
+                <div className="pt-4 mt-4 border-t border-brand-200/70 space-y-2">
+                  <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-1">
                     My Account ({role.toUpperCase()})
                   </p>
 
                   <Link
                     to={getDashboardLink()}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-white bg-brand-700 hover:bg-brand-800 shadow-soft transition-all"
+                    className="w-full flex items-center justify-between p-3 rounded-2xl text-xs font-bold text-white bg-brand-700 hover:bg-brand-800 shadow-soft transition-all"
                   >
-                    <LayoutDashboard className="w-4 h-4 shrink-0" />
-                    <span>Go to Dashboard</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+                        <LayoutDashboard className="w-4 h-4" />
+                      </div>
+                      <span>Go to Dashboard</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-white/80" />
                   </Link>
 
                   <Link
                     to={role === 'provider' ? '/provider/favorites' : '/adopter/favorites'}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-800 hover:bg-brand-100/60 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-brand-200/70 text-xs font-bold text-brand-800 hover:bg-brand-50 transition-colors shadow-xs"
                   >
                     <div className="flex items-center gap-3">
-                      <Heart className="w-4 h-4 text-rose-500 shrink-0" />
+                      <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+                        <Heart className="w-4 h-4" />
+                      </div>
                       <span>Saved Favorites</span>
                     </div>
                     {favoriteCount > 0 && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                      <span className="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-rose-100 text-rose-700 border border-rose-200">
                         {favoriteCount}
                       </span>
                     )}
@@ -569,14 +594,16 @@ export const Navbar: React.FC = () => {
                   <Link
                     to={role === 'provider' ? '/provider/notifications' : role === 'admin' ? '/admin/requests' : '/adopter/notifications'}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-800 hover:bg-brand-100/60 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-brand-200/70 text-xs font-bold text-brand-800 hover:bg-brand-50 transition-colors shadow-xs"
                   >
                     <div className="flex items-center gap-3">
-                      <Bell className="w-4 h-4 text-brand-600 shrink-0" />
+                      <div className="w-8 h-8 rounded-xl bg-brand-100/70 border border-brand-200/60 flex items-center justify-center text-brand-700">
+                        <Bell className="w-4 h-4" />
+                      </div>
                       <span>Notifications</span>
                     </div>
                     {unreadCount > 0 && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-200 text-brand-900 border border-brand-300">
+                      <span className="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-brand-200 text-brand-900 border border-brand-300">
                         {unreadCount}
                       </span>
                     )}
@@ -586,47 +613,59 @@ export const Navbar: React.FC = () => {
                     <Link
                       to="/admin/dashboard"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-emerald-800 hover:bg-emerald-50 border border-emerald-200 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs font-bold text-emerald-900 hover:bg-emerald-100/60 transition-colors shadow-xs"
                     >
-                      <Shield className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Admin Overview</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
+                          <Shield className="w-4 h-4" />
+                        </div>
+                        <span>Admin Overview</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-emerald-600" />
                     </Link>
                   ) : (
                     <Link
                       to="/admin"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-700 hover:bg-brand-50 border border-brand-200 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-brand-200/70 text-xs font-semibold text-brand-700 hover:bg-brand-50 transition-colors shadow-xs"
                     >
-                      <Shield className="w-4 h-4 text-brand-500 shrink-0" />
-                      <span>Admin Portal</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center text-brand-500">
+                          <Shield className="w-4 h-4" />
+                        </div>
+                        <span>Admin Portal</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-brand-400" />
                     </Link>
                   )}
                 </div>
               ) : (
-                <div className="pt-4 mt-4 border-t border-brand-100 space-y-2">
-                  <p className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-brand-400 mb-1">
-                    Join Platform
+                <div className="pt-4 mt-4 border-t border-brand-200/70 space-y-2.5">
+                  <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-brand-500 mb-1">
+                    Get Started or Sign In
                   </p>
                   <Link
                     to="/signup"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-bold bg-brand-700 hover:bg-brand-800 text-white shadow-soft transition-all"
+                    className="w-full flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-2xl text-xs font-bold bg-brand-700 hover:bg-brand-800 text-white shadow-soft transition-all active:scale-[0.99]"
                   >
+                    <Sparkles className="w-4 h-4" />
                     <span>Get Started</span>
                   </Link>
                   <Link
                     to="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-full text-xs font-bold text-brand-900 bg-surface border border-brand-200 hover:bg-brand-50 shadow-xs transition-colors"
+                    className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl text-xs font-bold text-brand-950 bg-surface border-2 border-brand-200 hover:bg-brand-50 hover:border-brand-300 shadow-xs transition-colors active:scale-[0.99]"
                   >
+                    <UserIcon className="w-4 h-4 text-brand-700" />
                     <span>Log In</span>
                   </Link>
                 </div>
               )}
             </div>
 
-            {/* Panel Footer */}
-            <div className="p-4 border-t border-brand-100 bg-surface-soft/90">
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-brand-200/70 bg-surface/90">
               {isAuthenticated && user ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
