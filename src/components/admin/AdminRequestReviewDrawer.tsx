@@ -447,7 +447,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
     try {
       setIsProcessingExtension(true);
       await trialExtensionService.approveExtension(
-        trial.id || request.id,
+        trial.extension?.id || trial.id || request.id,
         extensionResponseNote.trim() || undefined
       );
       showToast(
@@ -488,7 +488,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
     try {
       setIsProcessingExtension(true);
       await trialExtensionService.rejectExtension(
-        trial.id || request.id,
+        trial.extension?.id || trial.id || request.id,
         extensionResponseNote.trim() || 'Extension request declined by Platform Admin.'
       );
       showToast('Trial extension request declined.', 'info');
