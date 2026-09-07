@@ -239,6 +239,7 @@ export const authService = {
   /**
    * Initiate Google OAuth sign-in via Supabase.
    * Directs user to Google OAuth consent screen, then back to /auth/callback.
+   * Probes endpoint first to prevent navigating to raw 400 JSON screen if provider is unconfigured.
    */
   async signInWithGoogle(redirectTo?: string): Promise<{ data?: any; error?: string }> {
     if (!isSupabaseConfigured()) {
@@ -253,6 +254,7 @@ export const authService = {
         provider: 'google',
         options: {
           redirectTo: callbackUrl,
+          skipBrowserRedirect: true,
           queryParams: {
             access_type: 'offline',
             prompt: 'select_account',
@@ -264,6 +266,35 @@ export const authService = {
         return { error: getFriendlyAuthErrorMessage(error) };
       }
 
+      if (!data?.url) {
+        return { error: 'Failed to initialize Google authentication URL. Please try again.' };
+      }
+
+      // Pre-flight probe to verify if the provider is enabled in Supabase project
+      // Prevents navigating the browser to the raw Supabase 400 JSON error screen
+      try {
+        const probeRes = await fetch(data.url, {
+          method: 'GET',
+          headers: {
+            'apikey': (supabase as any).supabaseKey || '',
+          },
+          redirect: 'manual',
+        });
+
+        if (probeRes.status === 400) {
+          const body = await probeRes.text();
+          if (body.includes('Unsupported provider') || body.includes('provider is not enabled')) {
+            return {
+              error: 'Google Sign-In is not enabled yet in your Supabase project. Please enable the Google provider under Authentication → Providers in your Supabase Dashboard, or use Email & Password.',
+            };
+          }
+        }
+      } catch {
+        // Cross-origin redirects (expected when successfully redirected to Google) are permitted to proceed
+      }
+
+      // Provider is active or redirected to Google -> navigate browser
+      window.location.href = data.url;
       return { data };
     } catch (err) {
       return { error: getFriendlyAuthErrorMessage(err) };
