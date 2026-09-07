@@ -181,12 +181,9 @@ export const AdminLayout: React.FC = () => {
               </button>
             </form>
 
-            <div className="pt-3 border-t border-brand-800 text-[11px] text-brand-400 text-center space-y-2">
-              <p className="text-[11px] text-brand-300">
-                Authorized Passkey: <button type="button" onClick={() => setPasskey('admin2026')} className="font-mono text-emerald-400 bg-brand-950 px-2 py-0.5 rounded border border-emerald-800/60 hover:bg-emerald-950/80 cursor-pointer font-bold ml-1" title="Click to auto-fill">admin2026</button>
-              </p>
+            <div className="pt-3 border-t border-brand-800 text-[11px] text-brand-400 text-center space-y-1">
               <p className="text-[10px] text-brand-500">
-                All administrative actions, database queries, and audits are strictly restricted and monitored.
+                Administrative session is encrypted. Unauthorized access attempts are logged and monitored.
               </p>
             </div>
           </div>
