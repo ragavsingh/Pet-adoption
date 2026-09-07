@@ -40,6 +40,26 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Remove visible sliding scrollbar on phone/mobile screens for popups, modals, and dialogs */
+  @media (max-width: 639px) {
+    [role="dialog"],
+    [role="dialog"] *,
+    .no-scrollbar-mobile,
+    .no-scrollbar-mobile * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+      -webkit-overflow-scrolling: touch;
+    }
+    [role="dialog"]::-webkit-scrollbar,
+    [role="dialog"] *::-webkit-scrollbar,
+    .no-scrollbar-mobile::-webkit-scrollbar,
+    .no-scrollbar-mobile *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

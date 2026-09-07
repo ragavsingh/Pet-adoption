@@ -25,10 +25,12 @@ export const Modal: React.FC<ModalProps> = ({
     const savedY = window.scrollY || document.documentElement.scrollTop || 0;
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
       if (savedY > 0) {
         window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior });
@@ -49,7 +51,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto overflow-x-hidden no-scrollbar-mobile"
       role="dialog"
       aria-modal="true"
     >
@@ -62,7 +64,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Modal Card */}
       <div
-        className={`relative w-full ${maxWidthClasses} bg-surface rounded-3xl shadow-soft-lg border border-brand-200/80 p-6 sm:p-8 z-10 animate-fade-in max-h-[90vh] overflow-y-auto`}
+        className={`relative w-full ${maxWidthClasses} bg-surface rounded-3xl shadow-soft-lg border border-brand-200/80 p-5 sm:p-8 z-10 animate-fade-in max-h-[88dvh] sm:max-h-[90vh] overflow-y-auto no-scrollbar-mobile`}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 pb-4 border-b border-brand-100 mb-5">

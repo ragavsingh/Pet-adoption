@@ -45,7 +45,7 @@ export const PetFilterDrawer: React.FC<PetFilterDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center lg:hidden">
+    <div className="fixed inset-0 z-50 flex items-end justify-center lg:hidden no-scrollbar-mobile" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-brand-950/60 backdrop-blur-sm"
@@ -54,7 +54,7 @@ export const PetFilterDrawer: React.FC<PetFilterDrawerProps> = ({
       />
 
       {/* Drawer */}
-      <div className="relative w-full max-h-[85vh] bg-surface rounded-t-3xl shadow-soft-lg border-t border-brand-200 p-6 overflow-y-auto animate-slide-down">
+      <div className="relative w-full max-h-[85vh] bg-surface rounded-t-3xl shadow-soft-lg border-t border-brand-200 p-6 overflow-y-auto no-scrollbar-mobile animate-slide-down">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-brand-100 mb-4">
           <div>
