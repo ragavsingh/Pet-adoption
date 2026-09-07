@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { UserAvatar } from '../common/UserAvatar';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useNotifications } from '../../contexts/NotificationsContext';
-import { getNotificationConfig } from '../../utils/notificationConfig';
+import { getNotificationConfig, resolveNotificationRoute } from '../../utils/notificationConfig';
 import {
   Heart,
   Bell,
@@ -69,7 +69,7 @@ export const Navbar: React.FC = () => {
     };
   }, [mobileMenuOpen, location.pathname]);
 
-  // Standard dropdown behavior: close on outside click, Escape key, or page scrolling
+  // Standard dropdown behavior: close on outside click or Escape key
   useEffect(() => {
     if (!notifDropdownOpen && !userDropdownOpen && !mobileMenuOpen) return;
 
@@ -84,22 +84,6 @@ export const Navbar: React.FC = () => {
       }
     };
 
-    // Close immediately when user starts scrolling the page (mouse wheel, touch drag, trackpad, or window scroll)
-    const handleScrollOrMove = (event: Event) => {
-      const target = event.target as Node | null;
-      // If the scroll/wheel/touch interaction happened INSIDE the dropdown, keep it open!
-      if (notifDropdownOpen && notifRef.current && target && notifRef.current.contains(target)) {
-        return;
-      }
-      if (userDropdownOpen && userDropdownRef.current && target && userDropdownRef.current.contains(target)) {
-        return;
-      }
-
-      // Otherwise, the page itself is being scrolled -> close immediately!
-      if (notifDropdownOpen) setNotifDropdownOpen(false);
-      if (userDropdownOpen) setUserDropdownOpen(false);
-    };
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setNotifDropdownOpen(false);
@@ -109,19 +93,13 @@ export const Navbar: React.FC = () => {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
     document.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('scroll', handleScrollOrMove, { capture: true, passive: true });
-    window.addEventListener('wheel', handleScrollOrMove, { passive: true });
-    window.addEventListener('touchmove', handleScrollOrMove, { passive: true });
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('scroll', handleScrollOrMove, { capture: true });
-      window.removeEventListener('wheel', handleScrollOrMove);
-      window.removeEventListener('touchmove', handleScrollOrMove);
     };
   }, [notifDropdownOpen, userDropdownOpen, mobileMenuOpen]);
 
@@ -253,22 +231,18 @@ export const Navbar: React.FC = () => {
                         notifications.map((n) => {
                           const visual = getNotificationConfig(n.type);
                           const IconComponent = visual.icon;
-                          const targetRoute =
-                            role === 'admin'
-                              ? n.relatedEntityId
-                                ? `/admin/requests?id=${n.relatedEntityId}`
-                                : '/admin/requests'
-                              : n.link || visual.getDefaultRoute(n.relatedEntityId, role);
+                          const targetRoute = resolveNotificationRoute(n, role);
 
                           return (
-                            <div
+                            <button
                               key={n.id}
+                              type="button"
                               onClick={() => {
                                 markAsRead(n.id);
-                                if (targetRoute) navigate(targetRoute);
                                 setNotifDropdownOpen(false);
+                                if (targetRoute) navigate(targetRoute);
                               }}
-                              className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl cursor-pointer transition-colors flex items-start gap-2.5 sm:gap-3 my-0.5 sm:my-1 ${
+                              className={`w-full text-left p-2 sm:p-3 rounded-xl sm:rounded-2xl cursor-pointer transition-colors flex items-start gap-2.5 sm:gap-3 my-0.5 sm:my-1 ${
                                 !n.read ? 'bg-brand-50/80 hover:bg-brand-100/70' : 'hover:bg-zinc-50'
                               }`}
                             >
@@ -300,7 +274,7 @@ export const Navbar: React.FC = () => {
                               {!n.read && (
                                 <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-brand-600 shrink-0 mt-1 sm:mt-1.5" />
                               )}
-                            </div>
+                            </button>
                           );
                         })
                       )}

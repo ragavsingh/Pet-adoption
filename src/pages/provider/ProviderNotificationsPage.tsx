@@ -3,7 +3,7 @@ import { useNotifications } from '../../contexts/NotificationsContext';
 import { Button } from '../../components/common/Button';
 import { Bell, CheckCheck, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getNotificationConfig } from '../../utils/notificationConfig';
+import { getNotificationConfig, resolveNotificationRoute } from '../../utils/notificationConfig';
 
 export const ProviderNotificationsPage: React.FC = () => {
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useNotifications();
@@ -58,16 +58,17 @@ export const ProviderNotificationsPage: React.FC = () => {
           {notifications.map((notif) => {
             const visual = getNotificationConfig(notif.type);
             const IconComponent = visual.icon;
-            const targetRoute = notif.link || visual.getDefaultRoute(notif.relatedEntityId, 'provider');
+            const targetRoute = resolveNotificationRoute(notif, 'provider');
 
             return (
-              <div
+              <button
                 key={notif.id}
+                type="button"
                 onClick={() => {
                   markAsRead(notif.id);
                   if (targetRoute) navigate(targetRoute);
                 }}
-                className={`p-5 rounded-3xl border cursor-pointer transition-all flex items-start gap-4 ${
+                className={`w-full text-left p-5 rounded-3xl border cursor-pointer transition-all flex items-start gap-4 ${
                   !notif.read
                     ? 'bg-surface border-brand-300 shadow-card hover:bg-brand-50/50'
                     : 'bg-surface/70 border-brand-200/80 hover:bg-white text-brand-700'
@@ -107,7 +108,7 @@ export const ProviderNotificationsPage: React.FC = () => {
                 {!notif.read && (
                   <span className="w-2.5 h-2.5 rounded-full bg-brand-700 shrink-0 mt-2" />
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
