@@ -80,17 +80,19 @@ export const AuthCallbackPage: React.FC = () => {
         // Load or create user profile from database
         const profile = await profileService.loadUserProfile(authUser.id, authUser);
         const role = profile?.role || 'adopter';
+        const bestName = profile?.name || 'Adopter';
+        const firstName = bestName.split(' ')[0] || 'there';
 
         // Record user for real-time admin overview
         recordRegisteredUser({
           id: authUser.id,
-          name: profile?.name || authUser.user_metadata?.full_name || 'Google User',
+          name: bestName,
           email: authUser.email || '',
           role,
           avatarUrl: profile?.avatar || authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture,
         });
 
-        showToast(`Welcome! Logged in with Google as ${role.toUpperCase()}`, 'success');
+        showToast(`Welcome, ${firstName}! Logged in with Google as ${role.toUpperCase()}`, 'success');
 
         // Redirect based on role
         if (role === 'provider') {

@@ -40,6 +40,82 @@ function formatLocation(city?: string | null, locality?: string | null): string 
   return city || locality || 'India';
 }
 
+/**
+ * Checks if a string is a placeholder or default generic name.
+ */
+export function isPlaceholderName(name?: string | null): boolean {
+  if (!name || typeof name !== 'string') return true;
+  const trimmed = name.trim().toLowerCase();
+  return (
+    trimmed === '' ||
+    trimmed === 'new user' ||
+    trimmed === 'member' ||
+    trimmed === 'google user' ||
+    trimmed === 'user' ||
+    trimmed === 'undefined' ||
+    trimmed === 'null' ||
+    trimmed === 'anonymous'
+  );
+}
+
+/**
+ * Logically extracts the user's best human-readable name using priority hierarchy:
+ * 1. Customized DB name (if not a generic placeholder)
+ * 2. OAuth full_name or name from Google metadata
+ * 3. OAuth given_name + family_name
+ * 4. OAuth identity_data full_name/name
+ * 5. Formatted email handle (e.g. "raghav.singh" -> "Raghav Singh")
+ * 6. "Adopter"
+ */
+export function extractBestName(profileName?: string | null, authUser?: any): string {
+  if (profileName && !isPlaceholderName(profileName)) {
+    return profileName.trim();
+  }
+
+  const meta = authUser?.user_metadata || {};
+  const oauthFullName = meta.full_name || meta.name;
+  if (oauthFullName && !isPlaceholderName(oauthFullName)) {
+    return oauthFullName.trim();
+  }
+
+  if (meta.given_name) {
+    const combined = `${meta.given_name} ${meta.family_name || ''}`.trim();
+    if (combined && !isPlaceholderName(combined)) {
+      return combined;
+    }
+  }
+
+  // Identity data fallback from OAuth provider
+  const identityData = authUser?.identities?.[0]?.identity_data;
+  if (identityData) {
+    const idName = identityData.full_name || identityData.name;
+    if (idName && !isPlaceholderName(idName)) {
+      return idName.trim();
+    }
+  }
+
+  // Format email handle as a clean capitalized name (e.g. "raghav.singh@..." -> "Raghav Singh")
+  const email = authUser?.email || '';
+  if (email && email.includes('@')) {
+    const handle = email.split('@')[0];
+    const cleaned = handle
+      .replace(/[._-]/g, ' ')
+      .replace(/\d+/g, '')
+      .trim();
+
+    if (cleaned.length >= 2) {
+      return cleaned
+        .split(' ')
+        .filter(Boolean)
+        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+    }
+    return handle.charAt(0).toUpperCase() + handle.slice(1);
+  }
+
+  return 'Adopter';
+}
+
 export const profileService = {
   /**
    * Load the application profile for an authenticated Supabase user ID.
@@ -78,7 +154,9 @@ export const profileService = {
         // Safe onboarding fallback for new providers during initial trigger sync
         role = 'provider';
       }
-      const name = profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Member';
+
+      // Logically resolve best name and avatar
+      const name = extractBestName(profile?.full_name, authUser);
       const email = profile?.email || authUser?.email || '';
       const rawAvatar = profile?.profile_image_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture;
       const avatar = resolveUserAvatar({
@@ -86,6 +164,25 @@ export const profileService = {
         name,
         email,
       });
+
+      // If database has a placeholder name or missing avatar, but we resolved a better name/avatar from OAuth,
+      // sync the database row immediately in the background so it is permanently updated in Supabase!
+      if (
+        isSupabaseConfigured() &&
+        (isPlaceholderName(profile?.full_name) || !profile?.profile_image_url) &&
+        name &&
+        !isPlaceholderName(name)
+      ) {
+        (supabase as any)
+          .from('profiles')
+          .update({
+            full_name: name,
+            profile_image_url: profile?.profile_image_url || rawAvatar || null,
+          })
+          .eq('id', userId)
+          .then(() => {})
+          .catch((err: any) => console.warn('Background profile sync notice:', err?.message));
+      }
 
       const userObject: User = {
         id: userId,

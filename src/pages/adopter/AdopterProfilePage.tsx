@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
@@ -54,6 +54,30 @@ export const AdopterProfilePage: React.FC = () => {
       email: profile?.email || user?.email,
     })
   );
+
+  // Automatically keep view state in sync with updated user profile when not actively editing
+  useEffect(() => {
+    if (!isEditing && user) {
+      const activeName = profile?.name || user.name;
+      if (activeName && activeName !== name) {
+        setName(activeName);
+      }
+      const activeAvatar = resolveUserAvatar({
+        avatar: profile?.avatar || user.avatar,
+        name: activeName,
+        email: profile?.email || user.email,
+      });
+      if (activeAvatar && activeAvatar !== avatar) {
+        setAvatar(activeAvatar);
+      }
+      if (profile?.location && profile.location !== location) {
+        setLocation(profile.location);
+      }
+      if (profile?.phone && profile.phone !== phone) {
+        setPhone(profile.phone);
+      }
+    }
+  }, [user, profile, isEditing]);
   const [homeType, setHomeType] = useState<AdopterProfile['homeType']>(profile?.homeType || 'Apartment');
   const [workType, setWorkType] = useState<AdopterProfile['workType']>(profile?.workType || 'Hybrid');
   const [timeAway, setTimeAway] = useState<AdopterProfile['timeAway']>(profile?.timeAway || 'Under 4 hours');
