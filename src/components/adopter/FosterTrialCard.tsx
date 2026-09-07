@@ -197,6 +197,72 @@ export const FosterTrialCard: React.FC<FosterTrialCardProps> = ({
         </div>
       )}
 
+      {/* Prominent Pending Extension Request Banner */}
+      {trial.extension && (trial.extensionRequested || trial.extension.status === 'pending') && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-amber-50 border-2 border-amber-300 text-amber-950 shadow-soft-sm space-y-3 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-200 text-amber-900 flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                <Clock className="w-5 h-5 text-amber-800" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-display text-base font-bold text-amber-950">
+                    Trial Extension Requested (+{trial.extension.requestedDays || 3} Days)
+                  </h4>
+                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300 uppercase tracking-wider">
+                    Pending Provider Review
+                  </span>
+                </div>
+                <span className="text-xs text-amber-800 font-medium">
+                  Submitted {trial.extension.requestedAt ? new Date(trial.extension.requestedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'recently'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {trial.extension.reason && (
+            <div className="p-3 bg-white/90 rounded-2xl border border-amber-200 text-xs text-amber-900 leading-relaxed italic">
+              "{trial.extension.reason}"
+            </div>
+          )}
+
+          <p className="text-xs text-amber-800 leading-snug">
+            Rescue provider <strong>{request.providerName}</strong> has received your extension request. Your current 14-day bonding trial remains active and protected while your application is reviewed.
+          </p>
+        </div>
+      )}
+
+      {/* Prominent Approved Extension Banner */}
+      {trial.extension && trial.extension.status === 'approved' && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 shadow-soft-sm space-y-2.5 animate-fade-in">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-200 text-emerald-900 flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                <Sparkles className="w-5 h-5 text-emerald-800" />
+              </div>
+              <div>
+                <h4 className="font-display text-base font-bold text-emerald-950">
+                  Trial Extension Approved (+{trial.extension.requestedDays} Days)
+                </h4>
+                <span className="text-xs text-emerald-800 font-medium">
+                  New trial end date: <strong>{new Date(trial.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong>
+                </span>
+              </div>
+            </div>
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 border border-emerald-300 uppercase tracking-wider">
+              Approved
+            </span>
+          </div>
+
+          {trial.extension.providerResponse && (
+            <div className="p-3 bg-white/90 rounded-2xl border border-emerald-200 text-xs text-emerald-900 leading-relaxed italic">
+              Provider Note: "{trial.extension.providerResponse}"
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Trial Notes / Foster Journal */}
       <div className="space-y-3 pt-2">
         <div className="flex items-center justify-between">

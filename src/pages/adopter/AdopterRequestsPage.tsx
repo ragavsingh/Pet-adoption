@@ -5,7 +5,7 @@ import { adoptionService } from '../../services/adoptionService';
 import { AdoptionRequest, getDefaultVerification } from '../../types/adoptionRequest';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/common/Button';
-import { FileText, ArrowRight, Clock, Calendar, CheckCircle2, Heart } from 'lucide-react';
+import { FileText, ArrowRight, Clock, Calendar, CheckCircle2, Heart, Sparkles } from 'lucide-react';
 
 import { realtimeSync } from '../../services/realtimeSync';
 
@@ -155,9 +155,23 @@ export const AdopterRequestsPage: React.FC = () => {
               {/* Status Specific Highlights */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto justify-end">
                 {req.trial && req.status === 'Approved' && (
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 text-center">
-                    Trial: Day {req.trial.currentDay} of {req.trial.totalDays}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 text-center">
+                      Trial: Day {req.trial.currentDay} of {req.trial.totalDays}
+                    </span>
+                    {req.trial.extensionRequested && (
+                      <span className="text-xs font-bold text-amber-900 bg-amber-100 px-3 py-1.5 rounded-full border border-amber-300 flex items-center gap-1.5 animate-pulse">
+                        <Clock className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Extension Pending (+{req.trial.extension?.requestedDays || 3}d)</span>
+                      </span>
+                    )}
+                    {req.trial.extension?.status === 'approved' && (
+                      <span className="text-xs font-bold text-emerald-900 bg-emerald-100 px-3 py-1.5 rounded-full border border-emerald-300 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Extended (+{req.trial.extension.requestedDays}d)</span>
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 <Link to={`/adopter/requests/${req.id}`}>

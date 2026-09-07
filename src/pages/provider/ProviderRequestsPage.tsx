@@ -17,6 +17,7 @@ export const ProviderRequestsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
+  const [tabFilter, setTabFilter] = useState<'all' | 'screening' | 'trials' | 'extensions'>('all');
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<AdoptionRequest | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -93,19 +94,120 @@ export const ProviderRequestsPage: React.FC = () => {
     }
   };
 
+  const pendingExtensionsCount = requests.filter(
+    (r) => r.trial?.extensionRequested || r.trial?.extension?.status === 'pending'
+  ).length;
+
+  const filteredRequests = requests.filter((r) => {
+    if (tabFilter === 'extensions') {
+      return Boolean(r.trial?.extensionRequested || r.trial?.extension?.status === 'pending');
+    }
+    if (tabFilter === 'screening') {
+      return r.status === 'Pending' || r.status === 'Under Review';
+    }
+    if (tabFilter === 'trials') {
+      return r.status === 'Approved' && Boolean(r.trial);
+    }
+    return true;
+  });
+
   return (
-    <div className="space-y-8 text-left">
-      <div>
-        <span className="text-xs font-bold text-brand-600 uppercase tracking-widest bg-brand-100 px-3.5 py-1 rounded-full">
-          Applicant Screening
-        </span>
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-brand-950 mt-2">
-          Incoming Adoption Requests
-        </h1>
-        <p className="text-xs sm:text-sm text-brand-muted mt-1">
-          Review adopter home environments, send questions, and approve 14-day Foster-to-Own bonding trials.
-        </p>
+    <div className="space-y-6 text-left">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold text-brand-600 uppercase tracking-widest bg-brand-100 px-3.5 py-1 rounded-full">
+            Applicant Screening
+          </span>
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-brand-950 mt-2">
+            Incoming Adoption Requests
+          </h1>
+          <p className="text-xs sm:text-sm text-brand-muted mt-1">
+            Review adopter home environments, send questions, and approve 14-day Foster-to-Own bonding trials.
+          </p>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex items-center bg-brand-100/60 p-1 rounded-2xl border border-brand-200 text-xs self-start sm:self-auto flex-wrap">
+          <button
+            onClick={() => setTabFilter('all')}
+            className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+              tabFilter === 'all'
+                ? 'bg-surface text-brand-950 shadow-xs'
+                : 'text-brand-600 hover:text-brand-900'
+            }`}
+          >
+            All ({requests.length})
+          </button>
+          <button
+            onClick={() => setTabFilter('screening')}
+            className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+              tabFilter === 'screening'
+                ? 'bg-surface text-brand-950 shadow-xs'
+                : 'text-brand-600 hover:text-brand-900'
+            }`}
+          >
+            Screening ({requests.filter((r) => r.status === 'Pending' || r.status === 'Under Review').length})
+          </button>
+          <button
+            onClick={() => setTabFilter('trials')}
+            className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+              tabFilter === 'trials'
+                ? 'bg-surface text-brand-950 shadow-xs'
+                : 'text-brand-600 hover:text-brand-900'
+            }`}
+          >
+            Active Trials ({requests.filter((r) => r.status === 'Approved' && r.trial).length})
+          </button>
+          <button
+            onClick={() => setTabFilter('extensions')}
+            className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              tabFilter === 'extensions'
+                ? 'bg-amber-600 text-white shadow-xs font-bold'
+                : 'text-amber-800 hover:text-amber-950 bg-amber-100/60'
+            }`}
+          >
+            <span>Extensions</span>
+            {pendingExtensionsCount > 0 && (
+              <span
+                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                  tabFilter === 'extensions'
+                    ? 'bg-white text-amber-900'
+                    : 'bg-amber-600 text-white animate-pulse'
+                }`}
+              >
+                {pendingExtensionsCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Prominent Action Banner for Pending Extensions */}
+      {pendingExtensionsCount > 0 && tabFilter !== 'extensions' && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-amber-50 border-2 border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-amber-950 shadow-soft-sm animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-amber-200 text-amber-800 flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+              ⏳
+            </div>
+            <div>
+              <h4 className="font-display text-sm font-bold text-amber-950">
+                {pendingExtensionsCount} Foster Trial Extension Request{pendingExtensionsCount > 1 ? 's' : ''} Awaiting Review
+              </h4>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Foster parents have requested additional bonding time. Review reasons and decide.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setTabFilter('extensions')}
+            className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 shadow-xs"
+          >
+            Review Extension Requests →
+          </Button>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">
@@ -113,19 +215,26 @@ export const ProviderRequestsPage: React.FC = () => {
             <div key={i} className="h-28 bg-brand-100 rounded-3xl animate-pulse" />
           ))}
         </div>
-      ) : requests.length === 0 ? (
+      ) : filteredRequests.length === 0 ? (
         <div className="bg-surface rounded-3xl border border-brand-200 p-12 text-center max-w-md mx-auto space-y-3">
           <Inbox className="w-12 h-12 text-brand-400 mx-auto" />
           <h3 className="font-display text-xl font-bold text-brand-950">
-            No incoming applications
+            {tabFilter === 'extensions' ? 'No pending extension requests' : 'No applications found'}
           </h3>
           <p className="text-xs text-brand-muted">
-            New adoption requests for your pets will appear here for screening.
+            {tabFilter === 'extensions'
+              ? 'When foster parents request more bonding time, they will appear here.'
+              : 'New adoption requests for your pets will appear here for screening.'}
           </p>
+          {tabFilter !== 'all' && (
+            <Button variant="outline" size="sm" onClick={() => setTabFilter('all')}>
+              Show All Applications
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
-          {requests.map((req) => (
+          {filteredRequests.map((req) => (
             <div
               key={req.id}
               className="bg-surface rounded-3xl border border-brand-200/80 shadow-card hover:shadow-card-hover transition-all p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"

@@ -24,7 +24,7 @@ import {
 export const AdminRequestsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const paramStatus = searchParams.get('status');
-  const validStatuses = ['pending', 'under review', 'approved', 'completed', 'rejected'];
+  const validStatuses = ['pending', 'under review', 'approved', 'completed', 'rejected', 'extensions'];
   const initialStatus = paramStatus && validStatuses.includes(paramStatus.toLowerCase()) ? paramStatus.toLowerCase() : 'all';
 
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
@@ -198,6 +198,10 @@ export const AdminRequestsPage: React.FC = () => {
     setSelectedRequest(updatedReq);
   };
 
+  const pendingExtensionsCount = requests.filter(
+    (r) => r.trial?.extensionRequested || r.trial?.extension?.status === 'pending'
+  ).length;
+
   const filteredRequests = requests.filter((r) => {
     const matchesSearch =
       !search ||
@@ -207,7 +211,9 @@ export const AdminRequestsPage: React.FC = () => {
       r.id.toLowerCase().includes(search.toLowerCase());
 
     let matchesStatus = true;
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'extensions') {
+      matchesStatus = Boolean(r.trial?.extensionRequested || r.trial?.extension?.status === 'pending');
+    } else if (statusFilter !== 'all') {
       matchesStatus = r.status.toLowerCase() === statusFilter.toLowerCase();
     }
 
@@ -265,6 +271,29 @@ export const AdminRequestsPage: React.FC = () => {
                 {s === 'all' ? 'All' : s}
               </button>
             ))}
+
+            {/* Dedicated Extensions Filter Tab */}
+            <button
+              onClick={() => handleStatusFilterChange('extensions')}
+              className={`px-3 py-1 rounded-xl font-semibold capitalize transition-all cursor-pointer flex items-center gap-1.5 ${
+                statusFilter === 'extensions'
+                  ? 'bg-amber-600 text-white shadow-xs font-bold'
+                  : 'text-amber-800 hover:text-amber-950 bg-amber-100/60'
+              }`}
+            >
+              <span>Extensions</span>
+              {pendingExtensionsCount > 0 && (
+                <span
+                  className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                    statusFilter === 'extensions'
+                      ? 'bg-white text-amber-900'
+                      : 'bg-amber-600 text-white animate-pulse'
+                  }`}
+                >
+                  {pendingExtensionsCount}
+                </span>
+              )}
+            </button>
           </div>
 
           <div className="relative w-full sm:w-60">
