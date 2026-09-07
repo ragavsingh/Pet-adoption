@@ -3,6 +3,7 @@ import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { DemoRoleBar } from '../common/DemoRoleBar';
+import { MobileBottomNav } from './MobileBottomNav';
 import {
   LayoutDashboard,
   Dog,
@@ -24,14 +25,6 @@ export const ProviderLayout: React.FC = () => {
     { name: 'Adoptions Completed', path: '/provider/adoptions', icon: Award },
     { name: 'Provider Profile', path: '/provider/profile', icon: UserCheck },
     { name: 'Settings', path: '/provider/settings', icon: Settings },
-  ];
-
-  const mobileBottomItems = [
-    { name: 'Dashboard', path: '/provider/dashboard', icon: LayoutDashboard },
-    { name: 'Pets', path: '/provider/pets', icon: Dog },
-    { name: 'Add Pet', path: '/provider/pets/new', icon: PlusCircle },
-    { name: 'Requests', path: '/provider/requests', icon: Inbox },
-    { name: 'Profile', path: '/provider/profile', icon: UserCheck },
   ];
 
   return (
@@ -94,25 +87,8 @@ export const ProviderLayout: React.FC = () => {
 
       <Footer />
 
-      {/* Mobile Sticky Bottom Navigation for Provider (Section 27) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-brand-200 py-2 px-3 flex items-center justify-around shadow-soft-lg">
-        {mobileBottomItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path;
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
-                isActive ? 'text-brand-800 font-bold' : 'text-brand-muted hover:text-brand-800'
-              }`}
-            >
-              <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
-              <span className="text-[10px] mt-1 tracking-tight">{item.name}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
+      {/* Mobile Sticky Bottom Navigation for Provider */}
+      <MobileBottomNav />
 
       <DemoRoleBar />
     </div>

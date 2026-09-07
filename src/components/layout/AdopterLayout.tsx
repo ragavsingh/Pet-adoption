@@ -3,6 +3,7 @@ import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { DemoRoleBar } from '../common/DemoRoleBar';
+import { MobileBottomNav } from './MobileBottomNav';
 import {
   LayoutDashboard,
   Compass,
@@ -11,7 +12,6 @@ import {
   User as UserIcon,
   Award,
   Settings,
-  Bell,
 } from 'lucide-react';
 import { useFavorites } from '../../contexts/FavoritesContext';
 
@@ -27,14 +27,6 @@ export const AdopterLayout: React.FC = () => {
     { name: 'My Adoptions', path: '/adopter/adoptions', icon: Award },
     { name: 'Adopter Profile', path: '/adopter/profile', icon: UserIcon },
     { name: 'Settings', path: '/adopter/settings', icon: Settings },
-  ];
-
-  const mobileBottomItems = [
-    { name: 'Home', path: '/adopter/dashboard', icon: LayoutDashboard },
-    { name: 'Discover', path: '/pets', icon: Compass },
-    { name: 'Favorites', path: '/adopter/favorites', icon: Heart, count: favoriteCount },
-    { name: 'Requests', path: '/adopter/requests', icon: FileText },
-    { name: 'Profile', path: '/adopter/profile', icon: UserIcon },
   ];
 
   return (
@@ -102,32 +94,8 @@ export const AdopterLayout: React.FC = () => {
 
       <Footer />
 
-      {/* Mobile Sticky Bottom Navigation (Section 27) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-brand-200 py-2 px-3 flex items-center justify-around shadow-soft-lg">
-        {mobileBottomItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path;
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
-                isActive ? 'text-brand-800 font-bold' : 'text-brand-muted hover:text-brand-800'
-              }`}
-            >
-              <div className="relative">
-                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
-                {item.count !== undefined && item.count > 0 && (
-                  <span className="absolute -top-1.5 -right-2 bg-rose-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-extrabold">
-                    {item.count}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] mt-1 tracking-tight">{item.name}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
+      {/* Mobile Sticky Bottom Navigation */}
+      <MobileBottomNav />
 
       <DemoRoleBar />
     </div>
