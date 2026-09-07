@@ -921,6 +921,46 @@ export const adoptionService = {
     const index = all.findIndex((r) => r.id === requestId);
     const existingReq = index !== -1 ? all[index] : null;
 
+    // Check existing status from local state or DB
+    let currentStatus = existingReq?.status;
+    if (!currentStatus && isDbUUID && isSupabaseConfigured()) {
+      try {
+        const { data: dbRow } = await (supabase as any)
+          .from('adoption_requests')
+          .select('status')
+          .eq('id', requestId)
+          .maybeSingle();
+        if (dbRow?.status) {
+          const raw = dbRow.status.toLowerCase();
+          currentStatus = raw === 'cancelled'
+            ? 'Cancelled'
+            : raw === 'approved'
+            ? 'Approved'
+            : raw === 'completed'
+            ? 'Completed'
+            : raw === 'rejected'
+            ? 'Rejected'
+            : dbRow.status;
+        }
+      } catch (err) {
+        console.warn('[adoptionService] Error checking request status:', err);
+      }
+    }
+
+    const normalizedStatus = currentStatus?.toLowerCase();
+    if (normalizedStatus === 'cancelled') {
+      throw new Error('Cannot modify or approve an adoption application that has been cancelled by the applicant.');
+    }
+    if (normalizedStatus === 'completed') {
+      throw new Error('Adoption has already been officially completed and finalized.');
+    }
+    if (normalizedStatus === 'rejected') {
+      throw new Error('Cannot modify an adoption application that has been declined.');
+    }
+    if (normalizedStatus === 'approved' && (action === 'update_verification' || action === 'approve')) {
+      throw new Error('Verification checklist is permanently locked once the application is approved.');
+    }
+
     // 1. Calculate the final, mathematically sound verification object
     const finalVerification: AdoptionVerification = verification
       ? { ...verification }

@@ -355,7 +355,17 @@ export const AdminRequestsPage: React.FC = () => {
                 </tr>
               ) : (
                 filteredRequests.map((r) => {
-                  const verif = r.verification || getDefaultVerification(r);
+                  const rawVerif = r.verification || getDefaultVerification(r);
+                  const verif = (r.status === 'Approved' || r.status === 'Completed')
+                    ? {
+                        ...rawVerif,
+                        level: 4,
+                        percentage: 100,
+                        statusTitle: r.status === 'Completed'
+                          ? 'Forever Home Finalized'
+                          : 'Level 4: Fully Approved & Foster-to-Own Trial Active',
+                      }
+                    : rawVerif;
 
                   return (
                     <tr
@@ -438,7 +448,9 @@ export const AdminRequestsPage: React.FC = () => {
                             />
                           </div>
                           <span className="text-[10px] text-brand-400 block truncate max-w-[160px]">
-                            {verif.statusTitle.replace(/^Level \d+: /, '')}
+                            {r.status === 'Cancelled'
+                              ? 'Application Cancelled'
+                              : verif.statusTitle.replace(/^Level \d+: /, '')}
                           </span>
                         </div>
                       </td>
@@ -460,7 +472,15 @@ export const AdminRequestsPage: React.FC = () => {
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-50 text-brand-800 hover:bg-brand-100 font-bold border border-brand-200 transition-colors shadow-2xs"
                           >
                             <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-                            <span>Review & Verify</span>
+                            <span>
+                              {r.status === 'Completed'
+                                ? 'View Certificate'
+                                : r.status === 'Cancelled'
+                                ? 'View Application'
+                                : r.status === 'Approved'
+                                ? 'View Trial & Verify'
+                                : 'Review & Verify'}
+                            </span>
                           </button>
                         </div>
                       </td>

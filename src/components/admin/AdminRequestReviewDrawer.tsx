@@ -65,9 +65,26 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
   onUpdated,
 }) => {
   const { showToast } = useToast();
-  const [verification, setVerification] = useState<AdoptionVerification>(() =>
-    request?.verification || getDefaultVerification(request || {})
-  );
+  const [verification, setVerification] = useState<AdoptionVerification>(() => {
+    const base = request?.verification || getDefaultVerification(request || {});
+    if (request?.status === 'Approved' || request?.status === 'Completed') {
+      return {
+        ...base,
+        level: 4,
+        percentage: 100,
+        statusTitle:
+          request.status === 'Completed'
+            ? 'Level 4: Certified & Sealed (Adoption Completed)'
+            : 'Level 4: Fully Approved & Foster-to-Own Trial Active',
+        steps: base.steps.map((s) => ({
+          ...s,
+          completed: true,
+          checks: s.checks.map((c) => ({ ...c, checked: true })),
+        })),
+      };
+    }
+    return base;
+  });
   const [adminNotes, setAdminNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessingExtension, setIsProcessingExtension] = useState(false);
@@ -88,7 +105,24 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
   // Re-sync verification and state when opened or request changes
   useEffect(() => {
     if (request) {
-      setVerification(request.verification || getDefaultVerification(request));
+      let initialVer = request.verification || getDefaultVerification(request);
+      if (request.status === 'Approved' || request.status === 'Completed') {
+        initialVer = {
+          ...initialVer,
+          level: 4,
+          percentage: 100,
+          statusTitle:
+            request.status === 'Completed'
+              ? 'Level 4: Certified & Sealed (Adoption Completed)'
+              : 'Level 4: Fully Approved & Foster-to-Own Trial Active',
+          steps: initialVer.steps.map((s) => ({
+            ...s,
+            completed: true,
+            checks: s.checks.map((c) => ({ ...c, checked: true })),
+          })),
+        };
+      }
+      setVerification(initialVer);
       setAdminNotes(request.reviewNotes || '');
       setExtensionResponseNote('');
       if (request.status === 'Completed') {
@@ -106,6 +140,12 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
   if (!isOpen || !request) return null;
 
   const isCompleted = request.status === 'Completed';
+  const isApproved = request.status === 'Approved';
+  const isCancelled = request.status === 'Cancelled';
+  const isRejected = request.status === 'Rejected';
+  const isApprovedOrCompleted = isApproved || isCompleted;
+  const isLocked = isCompleted || isApproved || isCancelled || isRejected;
+  const isActionable = !isLocked;
 
   const certificateNumber =
     adoptionRecord?.certificateNumber ||
@@ -189,6 +229,18 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
       showToast('Adoption is officially completed. Verification checklist is permanently locked.', 'info');
       return;
     }
+    if (isApproved) {
+      showToast('Adoption trial is already approved. Verification checklist is permanently locked.', 'info');
+      return;
+    }
+    if (isCancelled) {
+      showToast('Application was cancelled by the applicant. Verification checklist is read-only.', 'info');
+      return;
+    }
+    if (isRejected) {
+      showToast('Application was declined. Verification checklist is read-only.', 'info');
+      return;
+    }
 
     const updatedSteps = verification.steps.map((step) => {
       if (step.level !== stepLevel) return step;
@@ -212,6 +264,18 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
   const handleToggleLevel = (stepLevel: number, complete: boolean) => {
     if (isCompleted) {
       showToast('Adoption is officially completed. Verification checklist is permanently locked.', 'info');
+      return;
+    }
+    if (isApproved) {
+      showToast('Adoption trial is already approved. Verification checklist is permanently locked.', 'info');
+      return;
+    }
+    if (isCancelled) {
+      showToast('Application was cancelled by the applicant. Verification checklist is read-only.', 'info');
+      return;
+    }
+    if (isRejected) {
+      showToast('Application was declined. Verification checklist is read-only.', 'info');
       return;
     }
 
@@ -278,8 +342,8 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
 
   // Save current step-wise verification without changing to Approved
   const handleSaveProgress = async () => {
-    if (isCompleted) {
-      showToast('Adoption is officially completed. Verification is permanently locked.', 'info');
+    if (isLocked) {
+      showToast('Verification cannot be modified for locked or concluded applications.', 'info');
       return;
     }
     try {
@@ -304,6 +368,14 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
 
   // 100% Full Approval (Level 4, all steps & checks completed)
   const handleApprove = async () => {
+    if (isCancelled) {
+      showToast('Cannot approve an application that was cancelled by the applicant.', 'error');
+      return;
+    }
+    if (isLocked) {
+      showToast('Application is already approved or concluded.', 'info');
+      return;
+    }
     try {
       setIsProcessing(true);
       const note = adminNotes.trim() || 'Verified and approved by Platform Administration.';
@@ -342,6 +414,10 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
 
   // Reject Application
   const handleReject = async () => {
+    if (isLocked) {
+      showToast('Application is already concluded and locked.', 'info');
+      return;
+    }
     const reason = adminNotes.trim();
     if (!reason) {
       showToast('Please provide a review note or reason for rejection.', 'error');
@@ -462,8 +538,6 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
     }
   };
 
-  const isApprovedOrCompleted = request.status === 'Approved' || request.status === 'Completed';
-
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-fade-in">
       <div className="w-full max-w-2xl bg-surface h-full shadow-2xl flex flex-col justify-between overflow-hidden border-l border-brand-200">
@@ -493,8 +567,18 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                     <Sparkles className="w-3 h-3 text-emerald-700" />
                     Forever Home Finalized
                   </span>
+                ) : isCancelled ? (
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-100 text-red-900 border border-red-300 flex items-center gap-1 shadow-xs">
+                    <AlertCircle className="w-3 h-3 text-red-600" />
+                    Application Cancelled
+                  </span>
+                ) : isApproved ? (
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1 shadow-xs">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    Trial Active (100% Verified)
+                  </span>
                 ) : countdown ? (
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
                     <Clock className="w-3 h-3 text-emerald-700" />
                     {countdown.isExpired
                       ? 'Trial Ended'
@@ -547,7 +631,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Step-Wise Verification ({verification.percentage}%)</span>
-            {isCompleted && <Lock className="w-3 h-3 text-emerald-600" />}
+            {isLocked && <Lock className="w-3 h-3 text-emerald-600" />}
           </button>
           <button
             onClick={() => setActiveTab('details')}
@@ -580,7 +664,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Top Banner: Celebratory Adoption Hero Banner when Completed, or Live Trial Countdown when in Trial */}
+          {/* Top Banner: Celebratory Adoption Hero Banner when Completed, or Alert when Cancelled, or Live Trial Countdown when in Trial */}
           {isCompleted ? (
             <div className="p-5 rounded-3xl bg-gradient-to-br from-emerald-950 via-brand-950 to-emerald-900 text-white shadow-soft-lg space-y-3.5 border-2 border-emerald-500/40 animate-fade-in">
               <div className="flex items-start justify-between gap-3">
@@ -639,6 +723,51 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                   </span>
                 </div>
               </div>
+            </div>
+          ) : isCancelled ? (
+            <div className="p-5 rounded-3xl bg-gradient-to-br from-red-950 via-brand-950 to-neutral-900 text-white shadow-soft-lg space-y-2 border-2 border-red-500/40 animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-500/20 border border-red-400/40 flex items-center justify-center text-red-300 shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-red-400">
+                      Application Cancelled
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/30 text-red-200 border border-red-400/40">
+                      Withdrawn by Applicant
+                    </span>
+                  </div>
+                  <h4 className="font-display text-base font-bold text-white mt-0.5">
+                    This adoption application was cancelled by {request.adopterName}.
+                  </h4>
+                </div>
+              </div>
+              <p className="text-xs text-brand-200 pl-13">
+                The applicant withdrew this adoption request. The verification checklist is archived and read-only.
+              </p>
+            </div>
+          ) : isRejected ? (
+            <div className="p-5 rounded-3xl bg-gradient-to-br from-neutral-900 via-brand-950 to-neutral-900 text-white shadow-soft-lg space-y-2 border-2 border-brand-500/30 animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-brand-500/20 border border-brand-400/40 flex items-center justify-center text-brand-300 shrink-0">
+                  <X className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-400">
+                      Application Declined
+                    </span>
+                  </div>
+                  <h4 className="font-display text-base font-bold text-white mt-0.5">
+                    This adoption request has been declined.
+                  </h4>
+                </div>
+              </div>
+              <p className="text-xs text-brand-300 pl-13">
+                Verification checklist is archived and read-only.
+              </p>
             </div>
           ) : (
             trial && countdown && isApprovedOrCompleted && (
@@ -964,6 +1093,75 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                 </div>
               )}
 
+              {/* Approved & Active Trial Status Alert Banner */}
+              {isApproved && (
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-center justify-between gap-3 text-emerald-950 shadow-xs animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-200/80 flex items-center justify-center text-emerald-800 shrink-0">
+                      <Lock className="w-5 h-5 text-emerald-700" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-xs text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                        Foster-to-Own Trial Approved & Checklist Locked
+                      </h5>
+                      <p className="text-[11px] text-emerald-800 mt-0.5">
+                        Application passed 100% verification and is actively in its bonding trial. Verification criteria are sealed and cannot be modified.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 border border-emerald-300 shrink-0 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-800" />
+                    Trial Active
+                  </span>
+                </div>
+              )}
+
+              {/* Cancelled Status Alert Banner */}
+              {isCancelled && (
+                <div className="p-4 rounded-2xl bg-red-50 border border-red-300 flex items-center justify-between gap-3 text-red-950 shadow-xs animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-red-200/80 flex items-center justify-center text-red-800 shrink-0">
+                      <Lock className="w-5 h-5 text-red-700" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-xs text-red-950 uppercase tracking-wider flex items-center gap-1.5">
+                        Application Cancelled by Applicant — Checklist Archived
+                      </h5>
+                      <p className="text-[11px] text-red-800 mt-0.5">
+                        The applicant cancelled this trial request. Verification items are read-only and no approval actions are available.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-200 text-red-900 border border-red-300 shrink-0 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 text-red-800" />
+                    Cancelled
+                  </span>
+                </div>
+              )}
+
+              {/* Rejected Status Alert Banner */}
+              {isRejected && (
+                <div className="p-4 rounded-2xl bg-brand-100 border border-brand-300 flex items-center justify-between gap-3 text-brand-950 shadow-xs animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-brand-200/80 flex items-center justify-center text-brand-800 shrink-0">
+                      <Lock className="w-5 h-5 text-brand-700" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-xs text-brand-950 uppercase tracking-wider flex items-center gap-1.5">
+                        Application Declined — Checklist Archived
+                      </h5>
+                      <p className="text-[11px] text-brand-800 mt-0.5">
+                        This adoption request has been declined. Verification criteria are archived.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-brand-200 text-brand-900 border border-brand-300 shrink-0 flex items-center gap-1">
+                    <X className="w-3 h-3 text-brand-800" />
+                    Declined
+                  </span>
+                </div>
+              )}
+
               {/* Approval Percentage Banner */}
               <div className="p-5 rounded-3xl bg-gradient-to-br from-brand-900 via-brand-950 to-brand-900 text-white shadow-soft-lg space-y-3">
                 <div className="flex items-center justify-between">
@@ -993,7 +1191,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                     Status: <strong className="text-white">{verification.statusTitle}</strong>
                   </span>
                   <span className="font-semibold text-brand-300">
-                    Level {verification.level} / 4 {isCompleted && '🔒'}
+                    Level {verification.level} / 4 {isLocked && '🔒'}
                   </span>
                 </div>
               </div>
@@ -1003,10 +1201,10 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                 {verification.steps.map((step) => {
                   const isExpanded = expandedLevels[step.level] ?? true;
                   const stepChecks = step.checks || [];
-                  const completedChecks = isCompleted
+                  const completedChecks = isApprovedOrCompleted
                     ? stepChecks.length
                     : stepChecks.filter((c) => c.checked).length;
-                  const isFullyChecked = isCompleted || (completedChecks === stepChecks.length && stepChecks.length > 0);
+                  const isFullyChecked = isApprovedOrCompleted || (completedChecks === stepChecks.length && stepChecks.length > 0);
 
                   return (
                     <div
@@ -1025,12 +1223,18 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-xs transition-colors ${
-                              isFullyChecked
+                              isFullyChecked || isApprovedOrCompleted
                                 ? 'bg-emerald-600 text-white shadow-xs'
+                                : isCancelled
+                                ? 'bg-red-100 text-red-700'
                                 : 'bg-brand-100 text-brand-700'
                             }`}
                           >
-                            {isFullyChecked ? <CheckCircle2 className="w-4 h-4" /> : step.level}
+                            {isFullyChecked || isApprovedOrCompleted ? (
+                              <CheckCircle2 className="w-4 h-4" />
+                            ) : (
+                              step.level
+                            )}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
@@ -1052,6 +1256,21 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                             <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                               <span>Verified & Locked</span>
+                            </span>
+                          ) : isApproved ? (
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                              <span>Approved & Locked</span>
+                            </span>
+                          ) : isCancelled ? (
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-red-100 text-red-800 border border-red-200 flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                              <span>Cancelled</span>
+                            </span>
+                          ) : isRejected ? (
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-brand-100 text-brand-700 border border-brand-200 flex items-center gap-1">
+                              <X className="w-3.5 h-3.5 text-brand-500" />
+                              <span>Declined</span>
                             </span>
                           ) : (
                             <button
@@ -1080,48 +1299,56 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                       {/* Criteria Checklist Items */}
                       {isExpanded && (
                         <div className="px-5 pb-4 pt-1 divide-y divide-brand-100 border-t border-brand-100/60">
-                          {stepChecks.map((check) => (
-                            <div
-                              key={check.id}
-                              onClick={() => {
-                                if (!isCompleted) {
-                                  handleToggleCheck(step.level, check.id);
-                                }
-                              }}
-                              className={`py-2.5 flex items-start gap-3 rounded-xl px-2 transition-colors ${
-                                isCompleted
-                                  ? 'cursor-default select-none'
-                                  : 'cursor-pointer group hover:bg-brand-50/30'
-                              }`}
-                            >
-                              <div className="mt-0.5 shrink-0 text-brand-600">
-                                {isCompleted || check.checked ? (
-                                  <CheckSquare className="w-4 h-4 text-emerald-600" />
-                                ) : (
-                                  <Square className="w-4 h-4 text-brand-300 group-hover:text-brand-500" />
+                          {stepChecks.map((check) => {
+                            const isItemChecked = isApproved || isCompleted || check.checked;
+                            return (
+                              <div
+                                key={check.id}
+                                onClick={() => {
+                                  if (isActionable) {
+                                    handleToggleCheck(step.level, check.id);
+                                  }
+                                }}
+                                className={`py-2.5 flex items-start gap-3 rounded-xl px-2 transition-colors ${
+                                  !isActionable
+                                    ? 'cursor-default select-none'
+                                    : 'cursor-pointer group hover:bg-brand-50/30'
+                                }`}
+                              >
+                                <div className="mt-0.5 shrink-0 text-brand-600">
+                                  {isItemChecked ? (
+                                    <CheckSquare className="w-4 h-4 text-emerald-600" />
+                                  ) : (
+                                    <Square className={`w-4 h-4 ${isCancelled ? 'text-brand-300' : 'text-brand-300 group-hover:text-brand-500'}`} />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <span
+                                    className={`text-xs font-semibold block leading-tight ${
+                                      isItemChecked ? 'text-brand-950 font-bold' : 'text-brand-700'
+                                    }`}
+                                  >
+                                    {check.label}
+                                  </span>
+                                  {check.description && (
+                                    <span className="text-[11px] text-brand-400 block mt-0.5">
+                                      {check.description}
+                                    </span>
+                                  )}
+                                </div>
+                                {isApprovedOrCompleted && (
+                                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0">
+                                    Passed
+                                  </span>
                                 )}
-                              </div>
-                              <div className="flex-1">
-                                <span
-                                  className={`text-xs font-semibold block leading-tight ${
-                                    isCompleted || check.checked ? 'text-brand-950 font-bold' : 'text-brand-700'
-                                  }`}
-                                >
-                                  {check.label}
-                                </span>
-                                {check.description && (
-                                  <span className="text-[11px] text-brand-400 block mt-0.5">
-                                    {check.description}
+                                {isCancelled && (
+                                  <span className="text-[10px] font-bold text-brand-500 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200 shrink-0">
+                                    Archived
                                   </span>
                                 )}
                               </div>
-                              {isCompleted && (
-                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0">
-                                  Passed
-                                </span>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1132,22 +1359,28 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
               {/* Admin Review Notes Input */}
               <div className="space-y-2 pt-2">
                 <label className="block text-xs font-bold text-brand-900 uppercase tracking-wider">
-                  Admin Verification Notes & Instructions {isCompleted && '(Archived)'}
+                  Admin Verification Notes & Instructions {isLocked && '(Archived)'}
                 </label>
                 <textarea
                   value={adminNotes}
                   onChange={(e) => {
-                    if (!isCompleted) setAdminNotes(e.target.value);
+                    if (isActionable) setAdminNotes(e.target.value);
                   }}
-                  readOnly={isCompleted}
+                  readOnly={!isActionable}
                   placeholder={
                     isCompleted
                       ? 'Adoption officially completed. Verification notes are archived.'
+                      : isApproved
+                      ? 'Adoption trial approved and active. Verification notes are locked.'
+                      : isCancelled
+                      ? 'Application was cancelled by applicant. Verification notes are archived.'
+                      : isRejected
+                      ? 'Application was declined. Verification notes are archived.'
                       : 'E.g., Contact verified. Living space approved for medium breed. Pre-approval granted for 14-day Foster-to-Own trial.'
                   }
                   rows={3}
                   className={`w-full p-3 rounded-2xl border text-xs transition-all ${
-                    isCompleted
+                    !isActionable
                       ? 'bg-brand-50/50 border-brand-200 text-brand-800 cursor-not-allowed'
                       : 'border-brand-200 text-brand-900 bg-surface focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder:text-brand-300'
                   }`}
@@ -1405,6 +1638,71 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                 </div>
               </div>
             </>
+          ) : isCancelled ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={onClose}
+                  className="text-brand-700"
+                >
+                  Close
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-bold">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span>Application Cancelled by Applicant (Archived)</span>
+              </div>
+            </>
+          ) : isRejected ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={onClose}
+                  className="text-brand-700"
+                >
+                  Close
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-brand-100 border border-brand-200 text-brand-800 text-xs font-bold">
+                <X className="w-4 h-4 text-brand-600" />
+                <span>Application Declined (Archived)</span>
+              </div>
+            </>
+          ) : isApproved ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={onClose}
+                  className="text-brand-700"
+                >
+                  Close
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                {hasPendingExtension && (
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={handleApproveExtension}
+                    disabled={isProcessingExtension}
+                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-2 shadow-md"
+                  >
+                    <Check className="w-4 h-4" />
+                    Approve Extension (+{pendingDays}d)
+                  </Button>
+                )}
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Foster-to-Own Active (Level 4 Verified & Approved)</span>
+                </div>
+              </div>
+            </>
           ) : (
             <>
               <div className="flex items-center gap-2">
@@ -1416,17 +1714,15 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                 >
                   Save Verification ({verification.percentage}%)
                 </Button>
-                {!isApprovedOrCompleted && (
-                  <Button
-                    variant="secondary"
-                    size="md"
-                    onClick={handleReject}
-                    disabled={isProcessing}
-                    className="text-red-700 border-red-200 hover:bg-red-50"
-                  >
-                    Reject
-                  </Button>
-                )}
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={handleReject}
+                  disabled={isProcessing}
+                  className="text-red-700 border-red-200 hover:bg-red-50"
+                >
+                  Reject
+                </Button>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1443,23 +1739,16 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                   </Button>
                 )}
 
-                {!isApprovedOrCompleted ? (
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={handleApprove}
-                    disabled={isProcessing}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md flex items-center gap-2"
-                  >
-                    <Heart className="w-4 h-4 fill-white" />
-                    Approve Adoption (100%)
-                  </Button>
-                ) : (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Foster-to-Own Active (Level 4 Approved)</span>
-                  </div>
-                )}
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleApprove}
+                  disabled={isProcessing}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md flex items-center gap-2"
+                >
+                  <Heart className="w-4 h-4 fill-white" />
+                  Approve Adoption (100%)
+                </Button>
               </div>
             </>
           )}
