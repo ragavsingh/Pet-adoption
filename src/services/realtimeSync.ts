@@ -7,6 +7,10 @@ type SyncEventType =
   | 'pet_status_updated'
   | 'pet_updated'
   | 'notification_received'
+  | 'user_created'
+  | 'user_updated'
+  | 'user_role_changed'
+  | 'user_registered'
   | 'all';
 
 
@@ -51,11 +55,75 @@ class RealtimeSyncManager {
       }
     });
 
-    // 3. Supabase Realtime Postgres Changes Subscription
+    // 3. Modern browser inter-tab BroadcastChannel
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        const bc = new BroadcastChannel('pet_realtime_sync_bc');
+        bc.onmessage = (e) => {
+          if (e.data && e.data.type) {
+            this.emitToListeners(e.data as RealtimeSyncEvent);
+          }
+        };
+      } catch (e) {
+        console.warn('[RealtimeSync] BroadcastChannel init error:', e);
+      }
+    }
+
+    // 4. Supabase Realtime Postgres Changes Subscription
     if (isSupabaseConfigured()) {
       try {
         this.supabaseChannel = supabase
           .channel('pet_adoption_platform_sync')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'profiles' },
+            (payload) => {
+              const eventType: SyncEventType =
+                payload.eventType === 'INSERT' ? 'user_created' : 'user_updated';
+              this.emitToListeners({
+                type: eventType,
+                entityId: (payload.new as any)?.id || (payload.old as any)?.id,
+                payload: payload.new,
+                timestamp: Date.now(),
+              });
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'adopter_profiles' },
+            (payload) => {
+              this.emitToListeners({
+                type: 'user_updated',
+                entityId: (payload.new as any)?.id || (payload.old as any)?.id,
+                payload: payload.new,
+                timestamp: Date.now(),
+              });
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'provider_profiles' },
+            (payload) => {
+              this.emitToListeners({
+                type: 'user_updated',
+                entityId: (payload.new as any)?.id || (payload.old as any)?.id,
+                payload: payload.new,
+                timestamp: Date.now(),
+              });
+            }
+          )
+          .on(
+            'broadcast',
+            { event: 'user_change' },
+            (payload) => {
+              this.emitToListeners({
+                type: 'user_created',
+                entityId: (payload.payload as any)?.id,
+                payload: payload.payload,
+                timestamp: Date.now(),
+              });
+            }
+          )
           .on(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'adoption_requests' },
@@ -148,7 +216,18 @@ class RealtimeSyncManager {
         new CustomEvent<RealtimeSyncEvent>('pet_realtime_sync', { detail: event })
       );
 
-      // Broadcast to other browser tabs
+      // Broadcast to other browser tabs via BroadcastChannel
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const bc = new BroadcastChannel('pet_realtime_sync_bc');
+          bc.postMessage(event);
+          bc.close();
+        } catch {
+          // ignore
+        }
+      }
+
+      // Broadcast to other browser tabs via StorageEvent
       try {
         localStorage.setItem('pet_sync_broadcast', JSON.stringify(event));
       } catch {

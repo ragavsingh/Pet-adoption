@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
-import { Search, UserCheck, Shield, Mail, MapPin, RefreshCw, UserCog, AlertCircle } from 'lucide-react';
+import { Search, Shield, RefreshCw, UserCog } from 'lucide-react';
 import { adminService, AdminUserRecord } from '../../services/adminService';
 import { UserRole } from '../../types/user';
 import { useToast } from '../../contexts/ToastContext';
 import { UserAvatar } from '../../components/common/UserAvatar';
+import { realtimeSync } from '../../services/realtimeSync';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 export const AdminUsersPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,11 +18,21 @@ export const AdminUsersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<'all' | 'adopter' | 'provider' | 'admin'>(initialRole);
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRealtimeActive, setIsRealtimeActive] = useState(true);
   const [targetUser, setTargetUser] = useState<AdminUserRecord | null>(null);
   const [newRole, setNewRole] = useState<UserRole>('adopter');
   const [isUpdating, setIsUpdating] = useState(false);
   const { showToast } = useToast();
-  const isLive = adminService.isLiveRealMode();
+
+  const isMountedRef = useRef(true);
+  const isFetchingRef = useRef(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const r = searchParams.get('role');
@@ -31,21 +43,142 @@ export const AdminUsersPage: React.FC = () => {
     }
   }, [searchParams]);
 
-  const loadUsers = async () => {
-    setIsLoading(true);
+  const loadUsers = useCallback(async (showLoadingSpinner: boolean = true) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
+    if (showLoadingSpinner && users.length === 0) {
+      setIsLoading(true);
+    }
+
     try {
       const data = await adminService.getUsers(search, roleFilter);
-      setUsers(data);
+      if (isMountedRef.current) {
+        setUsers(data);
+      }
     } catch (err) {
-      console.warn('Error loading users:', err);
+      console.warn('[AdminUsersPage] Error loading users:', err);
     } finally {
-      setIsLoading(false);
+      isFetchingRef.current = false;
+      if (isMountedRef.current && showLoadingSpinner) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, [search, roleFilter, users.length]);
 
+  // Initial load and filter change
   useEffect(() => {
-    loadUsers();
-  }, [search, roleFilter]);
+    loadUsers(users.length === 0);
+  }, [loadUsers]);
+
+  // Real-time synchronization engine
+  useEffect(() => {
+    // 1. Subscribe to centralized realtimeSync events
+    const unsubscribeSync = realtimeSync.subscribe((event) => {
+      if (
+        event.type === 'user_created' ||
+        event.type === 'user_updated' ||
+        event.type === 'user_role_changed' ||
+        event.type === 'user_registered' ||
+        event.type === 'all'
+      ) {
+        loadUsers(false);
+      }
+    });
+
+    // 2. Direct Supabase Realtime channel subscription
+    let channel: any = null;
+    if (isSupabaseConfigured()) {
+      try {
+        channel = supabase
+          .channel('admin_users_live_channel')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'profiles' },
+            () => loadUsers(false)
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'adopter_profiles' },
+            () => loadUsers(false)
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'provider_profiles' },
+            () => loadUsers(false)
+          )
+          .on(
+            'broadcast',
+            { event: 'user_change' },
+            () => loadUsers(false)
+          )
+          .subscribe((status) => {
+            if (isMountedRef.current) {
+              setIsRealtimeActive(status === 'SUBSCRIBED');
+            }
+          });
+      } catch (err) {
+        console.warn('[AdminUsersPage] Supabase channel subscription error:', err);
+      }
+    }
+
+    // 3. Inter-tab broadcast channel for immediate cross-tab updates
+    let bc: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        bc = new BroadcastChannel('pet_adoption_platform_sync');
+        bc.onmessage = (event) => {
+          if (event.data?.type?.startsWith('USER_') || event.data?.type === 'REFRESH_USERS') {
+            loadUsers(false);
+          }
+        };
+      } catch {
+        // ignore
+      }
+    }
+
+    // 4. Storage event listener (fires across tabs when localStorage is updated)
+    const handleStorage = (e: StorageEvent) => {
+      if (
+        e.key === 'pet_adoption_registered_users_v2' ||
+        e.key === 'pet_adoption_auth_user_v2' ||
+        e.key === 'pet_sync_broadcast'
+      ) {
+        loadUsers(false);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    // 5. Window focus & document visibility (refreshes immediately when admin returns to tab)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadUsers(false);
+      }
+    };
+    window.addEventListener('focus', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // 6. Fast polling heartbeat (every 3.5 seconds while tab is active)
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadUsers(false);
+      }
+    }, 3500);
+
+    return () => {
+      unsubscribeSync();
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      if (bc) {
+        bc.close();
+      }
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('focus', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(pollInterval);
+    };
+  }, [loadUsers]);
 
   const handleRoleFilterChange = (r: 'all' | 'adopter' | 'provider' | 'admin') => {
     setRoleFilter(r);
@@ -85,14 +218,22 @@ export const AdminUsersPage: React.FC = () => {
     <div className="space-y-6 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="font-display text-2xl font-bold text-brand-950">Registered Users</h2>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
               Verified Platform Registry
             </span>
+            {/* Live Real-Time Status Badge */}
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Live Real-Time Sync</span>
+            </div>
           </div>
-          <p className="text-xs text-brand-muted">
-            Directory of registered adopters, caregivers, and administrative staff across the network.
+          <p className="text-xs text-brand-muted mt-0.5">
+            Directory of registered adopters, caregivers, and administrative staff across the network ({users.length} total profiles).
           </p>
         </div>
 
@@ -126,9 +267,9 @@ export const AdminUsersPage: React.FC = () => {
           </div>
 
           <button
-            onClick={loadUsers}
+            onClick={() => loadUsers(true)}
             disabled={isLoading}
-            className="p-2 rounded-2xl border border-brand-200 hover:bg-brand-50 text-brand-700 transition-colors"
+            className="p-2 rounded-2xl border border-brand-200 hover:bg-brand-50 text-brand-700 transition-colors cursor-pointer"
             title="Refresh list"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -150,7 +291,7 @@ export const AdminUsersPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-100">
-              {isLoading ? (
+              {isLoading && users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-brand-400 font-medium">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-brand-600" />

@@ -86,11 +86,19 @@ export const AddPetWizard: React.FC = () => {
 
   // Photos helper
   const handleAddImage = () => {
-    if (imageUrlInput.trim()) {
-      setImages([...images, imageUrlInput.trim()]);
-      setImageUrlInput('');
-      showToast('Image preview added to gallery.', 'info');
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+
+    // Strict URL validation: must start with https://, http://, or data:image/
+    const isValidProtocol = /^https?:\/\//i.test(trimmed) || /^data:image\/[a-z0-9.+_-]+;base64,/i.test(trimmed);
+    if (!isValidProtocol) {
+      showToast('Please enter a valid HTTP/HTTPS image URL or data URI.', 'error');
+      return;
     }
+
+    setImages([...images, trimmed]);
+    setImageUrlInput('');
+    showToast('Image preview added to gallery.', 'info');
   };
 
   const handleRemoveImage = (index: number) => {

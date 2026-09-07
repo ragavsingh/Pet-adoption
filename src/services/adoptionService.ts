@@ -17,7 +17,16 @@ import { trialExtensionService } from './trialExtensionService';
 import { emailNotificationService } from './emailNotificationService';
 import { realtimeSync } from './realtimeSync';
 
-const STORAGE_KEY = 'pet_adoption_requests_v3';
+const STORAGE_KEY = 'pet_adoption_requests_v4';
+
+export function formatTitleCase(str?: string | null): string {
+  if (!str || !str.trim()) return '';
+  return str
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
 
 // ==============================================================================
 // 1. HELPER UTILITIES
@@ -131,20 +140,25 @@ export function mapAdoptionRequestFromDatabase(row: any): AdoptionRequest {
     petImage = sorted[0].image_url;
   }
 
-  // Provider details from joins
-  const providerProfile = row.provider_profile;
+  // Provider details from joins (RPC 'provider', table join 'provider_profile', or 'provider_details')
+  const providerProfile = row.provider || row.provider_profile || row.provider_details;
   const providerDetails = row.provider_details;
-  const providerName = providerProfile?.full_name || providerDetails?.organization_name || 'Pet Care Provider';
+  const rawProviderName = providerProfile?.full_name || providerDetails?.organization_name || row.provider_name;
+  const providerName = rawProviderName ? formatTitleCase(rawProviderName) : 'Pet Care Provider';
   const providerLocation = providerProfile?.city
-    ? `${providerProfile.locality ? `${providerProfile.locality}, ` : ''}${providerProfile.city}`
+    ? `${providerProfile.locality ? `${formatTitleCase(providerProfile.locality)}, ` : ''}${formatTitleCase(providerProfile.city)}`
     : 'Mumbai';
 
-  // Adopter details from joins
-  const adopterProfile = row.adopter_profile;
-  const adopterName = adopterProfile?.full_name || 'Adopter';
+  // Adopter details from joins (RPC 'adopter', table join 'adopter_profile', or 'profiles')
+  const adopterProfile = row.adopter || row.adopter_profile || row.profiles;
+  const rawAdopterName = adopterProfile?.full_name || row.adopter_name;
+  const adopterName = rawAdopterName ? formatTitleCase(rawAdopterName) : 'Adopter';
+  const adopterEmail = adopterProfile?.email || row.adopter_email || '';
+  const adopterPhone = adopterProfile?.phone || row.adopter_phone || '';
   const adopterLocation = adopterProfile?.city
-    ? `${adopterProfile.locality ? `${adopterProfile.locality}, ` : ''}${adopterProfile.city}`
-    : 'Mumbai';
+    ? `${adopterProfile.locality ? `${formatTitleCase(adopterProfile.locality)}, ` : ''}${formatTitleCase(adopterProfile.city)}`
+    : (row.home_type ? `${row.home_type}` : 'India');
+  const adopterAvatar = adopterProfile?.profile_image_url || undefined;
 
   // Timeline events reconstruction - dynamically synchronized with current status
   const timeline: TimelineEvent[] = buildSynchronizedTimeline(
@@ -181,7 +195,7 @@ export function mapAdoptionRequestFromDatabase(row: any): AdoptionRequest {
     getDefaultVerification({
       status,
       adopterName,
-      adopterEmail: adopterProfile?.email,
+      adopterEmail,
       homeType: row.home_type,
       existingPets: row.existing_pets,
       children: row.children,
@@ -191,6 +205,11 @@ export function mapAdoptionRequestFromDatabase(row: any): AdoptionRequest {
       confirmedAccurate: Boolean(row.confirmed_accurate),
       updatedAt: row.updated_at,
     });
+
+  // Guarantee step 1 contact check dynamically reflects actual applicant profile
+  if (verification?.steps?.[0]?.checks?.[0]) {
+    verification.steps[0].checks[0].description = `${adopterName} (${adopterEmail || 'Verified Email'})`;
+  }
 
   // Guarantee: An Approved or Completed request is ALWAYS 100% Level 4 completed
   if (
@@ -242,10 +261,10 @@ export function mapAdoptionRequestFromDatabase(row: any): AdoptionRequest {
     providerLocation,
     adopterId: row.adopter_id,
     adopterName,
-    adopterEmail: adopterProfile?.email || '',
-    adopterPhone: adopterProfile?.phone || '',
+    adopterEmail,
+    adopterPhone,
     adopterLocation,
-    adopterAvatar: adopterProfile?.profile_image_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+    adopterAvatar: adopterAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
     message: row.message || '',
     homeType: row.home_type || 'Apartment',
     existingPets: row.existing_pets || 'None',
@@ -367,8 +386,11 @@ export const adoptionService = {
   async getAllRequests(): Promise<AdoptionRequest[]> {
     if (isSupabaseConfigured()) {
       try {
-        // 1. First try the high-performance security definer RPC
-        const { data: rpcData, error: rpcError } = await (supabase as any).rpc('get_platform_adoption_requests');
+        // 1. First try the high-performance security definer RPC with session passkey
+        const passkey = typeof window !== 'undefined' ? sessionStorage.getItem('pet_admin_session_passkey') : null;
+        const { data: rpcData, error: rpcError } = await (supabase as any).rpc('get_platform_adoption_requests', {
+          p_passkey: passkey || undefined,
+        });
         if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
           const dbRequests = rpcData.map(mapAdoptionRequestFromDatabase);
           const demoRequests = loadRequests();
@@ -391,8 +413,8 @@ export const adoptionService = {
               id, name, breed, species, city, locality,
               pet_images ( image_url, display_order, is_primary )
             ),
-            adopter_profile:profiles!adopter_id ( id, full_name, phone, city, locality, profile_image_url ),
-            provider_profile:profiles!provider_id ( id, full_name, phone, city, locality, profile_image_url ),
+            adopter_profile:profiles!adopter_id ( id, full_name, email, phone, city, locality, profile_image_url ),
+            provider_profile:profiles!provider_id ( id, full_name, email, phone, city, locality, profile_image_url ),
             provider_details:provider_profiles!provider_id ( organization_name, city, locality ),
             foster_trials ( id, start_date, end_date, status, journal_entries, trial_extension_requests (*) )
           `)
@@ -428,8 +450,8 @@ export const adoptionService = {
             id, name, breed, species, city, locality,
             pet_images ( image_url, display_order, is_primary )
           ),
-          adopter_profile:profiles!adopter_id ( id, full_name, phone, city, locality, profile_image_url ),
-          provider_profile:profiles!provider_id ( id, full_name, phone, city, locality, profile_image_url ),
+          adopter_profile:profiles!adopter_id ( id, full_name, email, phone, city, locality, profile_image_url ),
+          provider_profile:profiles!provider_id ( id, full_name, email, phone, city, locality, profile_image_url ),
           provider_details:provider_profiles!provider_id ( organization_name, city, locality ),
           foster_trials ( id, start_date, end_date, status, journal_entries, trial_extension_requests (*) )
         `;
@@ -503,8 +525,8 @@ export const adoptionService = {
               id, name, breed, species, city, locality,
               pet_images ( image_url, display_order, is_primary )
             ),
-            adopter_profile:profiles!adopter_id ( id, full_name, phone, city, locality, profile_image_url ),
-            provider_profile:profiles!provider_id ( id, full_name, phone, city, locality, profile_image_url ),
+            adopter_profile:profiles!adopter_id ( id, full_name, email, phone, city, locality, profile_image_url ),
+            provider_profile:profiles!provider_id ( id, full_name, email, phone, city, locality, profile_image_url ),
             provider_details:provider_profiles!provider_id ( organization_name, city, locality ),
             foster_trials ( id, start_date, end_date, status, journal_entries, trial_extension_requests (*) )
           `)
@@ -544,8 +566,8 @@ export const adoptionService = {
               id, name, breed, species, city, locality,
               pet_images ( image_url, display_order, is_primary )
             ),
-            adopter_profile:profiles!adopter_id ( id, full_name, phone, city, locality, profile_image_url ),
-            provider_profile:profiles!provider_id ( id, full_name, phone, city, locality, profile_image_url ),
+            adopter_profile:profiles!adopter_id ( id, full_name, email, phone, city, locality, profile_image_url ),
+            provider_profile:profiles!provider_id ( id, full_name, email, phone, city, locality, profile_image_url ),
             provider_details:provider_profiles!provider_id ( organization_name, city, locality ),
             foster_trials ( id, start_date, end_date, status, journal_entries, trial_extension_requests (*) )
           `)

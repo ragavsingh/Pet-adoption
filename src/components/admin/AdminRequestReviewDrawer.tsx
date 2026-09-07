@@ -506,8 +506,8 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                 {request.petBreed} • Shelter: <span className="text-brand-900">{request.providerName}</span>
               </p>
               <p className="text-xs text-brand-muted">
-                Applicant: <strong className="text-brand-900">{request.adopterName}</strong> (
-                {request.adopterEmail || request.adopterLocation})
+                Applicant: <strong className="text-brand-900">{request.adopterName}</strong>
+                {request.adopterLocation ? ` (${request.adopterLocation})` : request.adopterEmail ? ` (${request.adopterEmail})` : ''}
               </p>
             </div>
           </div>
@@ -1162,9 +1162,17 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
               {/* Applicant Header Card */}
               <div className="bg-brand-50/70 rounded-3xl p-5 border border-brand-200 space-y-4">
                 <div className="flex items-center gap-3 pb-3 border-b border-brand-100">
-                  <div className="w-12 h-12 rounded-2xl bg-brand-700 text-white flex items-center justify-center font-display text-lg font-bold shadow-xs">
-                    {request.adopterName.charAt(0).toUpperCase()}
-                  </div>
+                  {request.adopterAvatar && !request.adopterAvatar.includes('unsplash') ? (
+                    <img
+                      src={request.adopterAvatar}
+                      alt={request.adopterName}
+                      className="w-12 h-12 rounded-2xl object-cover border border-brand-200 shadow-xs shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-2xl bg-brand-700 text-white flex items-center justify-center font-display text-lg font-bold shadow-xs shrink-0">
+                      {request.adopterName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-display text-base font-bold text-brand-950 flex items-center gap-2">
                       {request.adopterName}
@@ -1172,6 +1180,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                         Verified Applicant
                       </span>
                     </h4>
+                    <p className="text-xs font-semibold text-brand-700 mt-0.5">Adopter</p>
                     <p className="text-xs text-brand-500">
                       Applied on{' '}
                       {new Date(request.createdAt).toLocaleDateString('en-US', {
@@ -1213,7 +1222,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                       Residential Location
                     </span>
                     <span className="font-bold text-brand-950 mt-0.5 block">
-                      {request.adopterLocation || 'Roorkee, Uttarakhand, India'}
+                      {request.adopterLocation || 'India'}
                     </span>
                   </div>
                 </div>

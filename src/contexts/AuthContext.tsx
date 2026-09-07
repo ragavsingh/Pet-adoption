@@ -19,6 +19,7 @@ interface AuthContextValue {
 
   // Real Supabase Authentication Methods
   realLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
+  realLoginWithGoogle: (redirectTo?: string) => Promise<{ error?: string }>;
   realLoginWithOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   realVerifyOtp: (email: string, token: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
   realResendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -92,6 +93,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem(AUTH_MODE_KEY, authMode);
   }, [authMode]);
+
+  // Cross-tab authentication synchronization (instant multi-tab logout and session update)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === AUTH_STORAGE_KEY) {
+        if (!e.newValue) {
+          // User logged out in another tab
+          setUser(null);
+          setAuthMode('demo');
+        } else {
+          // User profile updated in another tab
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (parsed && parsed.email) {
+              setUser(parsed);
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Real Supabase session restoration and event subscription
   useEffect(() => {
@@ -180,6 +207,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
+  const realLoginWithGoogle = async (redirectTo?: string): Promise<{ error?: string }> => {
+    setIsLoading(true);
+    const result = await authService.signInWithGoogle(redirectTo);
+    if (result.error) {
+      setIsLoading(false);
+      return { error: result.error };
+    }
+    // Redirection is handled by the browser to Supabase Google OAuth provider
+    return {};
+  };
+
   const realLoginWithOtp = async (email: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     const result = await authService.signInWithOtp(email);
@@ -229,6 +267,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: result.error };
     }
 
+    // Immediately record newly created user so admin console sees it in real time
+    recordRegisteredUser({
+      id: result.user?.id,
+      name: params.fullName,
+      email: params.email,
+      role: params.role,
+      location: params.city,
+    });
+
     if (result.requiresEmailConfirmation) {
       setIsLoading(false);
       return {
@@ -253,6 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       sessionStorage.removeItem('pet_admin_session_auth_v2');
+      sessionStorage.removeItem('pet_admin_session_passkey');
       sessionStorage.removeItem('pet_admin_explicit_locked');
       localStorage.removeItem(AUTH_STORAGE_KEY);
       localStorage.removeItem(AUTH_MODE_KEY);
@@ -266,7 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const forgotPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
-    return realLoginWithOtp(email);
+    return authService.resetPasswordForEmail(email);
   };
 
   const resetPassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
@@ -417,6 +465,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         authMode,
         realLogin,
+        realLoginWithGoogle,
         realLoginWithOtp,
         realVerifyOtp,
         realResendOtp,

@@ -55,10 +55,13 @@ export const notificationService = {
 
     const isAdminUser = userId === 'usr_admin' || userId === 'a0000000-0000-0000-0000-000000000099' || userId === 'admin';
 
-    // 1. Platform Admin Notifications (Query specialized security definer RPC)
+    // 1. Platform Admin Notifications (Query specialized security definer RPC with session passkey)
     if (isAdminUser && isSupabaseConfigured()) {
       try {
-        const { data: adminRpcData, error: adminRpcError } = await (supabase as any).rpc('get_admin_notifications');
+        const passkey = typeof window !== 'undefined' ? sessionStorage.getItem('pet_admin_session_passkey') : null;
+        const { data: adminRpcData, error: adminRpcError } = await (supabase as any).rpc('get_admin_notifications', {
+          p_passkey: passkey || undefined,
+        });
         if (!adminRpcError && Array.isArray(adminRpcData) && adminRpcData.length > 0) {
           const dbNotifs = adminRpcData.map((row: any): AppNotification => ({
             id: row.id,

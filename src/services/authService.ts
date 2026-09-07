@@ -150,7 +150,35 @@ export const authService = {
         return { success: false, error: getFriendlyAuthErrorMessage(error) };
       }
 
-      // Check if email confirmation is required by checking if user has confirmed identities or session
+      // Security & Collision: Supabase returns identities: [] when user already exists (anti-enumeration mode)
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return {
+          success: false,
+          error: 'An account with this email address already exists. Please log in instead.',
+        };
+      }
+
+      // If user was created but session was not returned, attempt immediate password login
+      // so the user gets instant access without email verification blocking
+      if (data.user && !data.session) {
+        try {
+          const loginRes = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password: params.password,
+          });
+          if (loginRes.data?.session) {
+            return {
+              success: true,
+              requiresEmailConfirmation: false,
+              user: loginRes.data.user || data.user,
+            };
+          }
+        } catch {
+          // If auto-login fails (e.g. strict email confirmation enforced in project), report requirement
+        }
+      }
+
+      // Check if email confirmation is still required
       const requiresConfirmation = Boolean(data.user && !data.session);
 
       return {
@@ -205,6 +233,40 @@ export const authService = {
       };
     } catch (err) {
       return { success: false, error: getFriendlyAuthErrorMessage(err) };
+    }
+  },
+
+  /**
+   * Initiate Google OAuth sign-in via Supabase.
+   * Directs user to Google OAuth consent screen, then back to /auth/callback.
+   */
+  async signInWithGoogle(redirectTo?: string): Promise<{ data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) {
+      return {
+        error: 'Real authentication requires Supabase. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',
+      };
+    }
+
+    try {
+      const callbackUrl = redirectTo || `${window.location.origin}/auth/callback`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callbackUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          },
+        },
+      });
+
+      if (error) {
+        return { error: getFriendlyAuthErrorMessage(error) };
+      }
+
+      return { data };
+    } catch (err) {
+      return { error: getFriendlyAuthErrorMessage(err) };
     }
   },
 

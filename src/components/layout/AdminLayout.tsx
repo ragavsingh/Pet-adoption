@@ -16,7 +16,21 @@ import {
 import { adminService } from '../../services/adminService';
 
 const ADMIN_SESSION_KEY = 'pet_admin_session_auth_v2';
-const VALID_PASSKEYS = ['admin2026', 'Admin@2026', 'petadmin2026'];
+const ADMIN_PASSKEY_STORAGE_KEY = 'pet_admin_session_passkey';
+
+// Cryptographic SHA-256 hashes of approved admin master passkeys
+const AUTHORIZED_PASSKEY_HASHES = new Set([
+  '6051fc84a7a0d74c225fb18a496b09952da5642e60723ecae543298edd7d82d6', // admin2026
+  'a36aef5a11c4073fbe60314fc9df530a9d5f986533594d1f5190742ff9e0e408', // Admin@2026
+  '0142a456b89f5cac01f4adf9ca1c7d41ea11b74dc15dd984ac8dd97c4765e22f', // petadmin2026
+]);
+
+async function sha256Hex(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 export const AdminLayout: React.FC = () => {
   const { user } = useAuth();
@@ -25,8 +39,11 @@ export const AdminLayout: React.FC = () => {
   // Check if session is already unlocked in this browser tab via passkey
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     try {
+      const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
+      if (explicitLocked) return false;
       const auth = sessionStorage.getItem(ADMIN_SESSION_KEY);
-      return auth === 'unlocked';
+      const pass = sessionStorage.getItem(ADMIN_PASSKEY_STORAGE_KEY) || localStorage.getItem(ADMIN_PASSKEY_STORAGE_KEY);
+      return auth === 'unlocked' || Boolean(pass);
     } catch {
       return false;
     }
@@ -37,25 +54,35 @@ export const AdminLayout: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleUnlock = (e: React.FormEvent) => {
+  const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMsg('');
 
-    const clean = passkey.trim();
-    if (VALID_PASSKEYS.includes(clean)) {
-      sessionStorage.setItem(ADMIN_SESSION_KEY, 'unlocked');
-      sessionStorage.removeItem('pet_admin_explicit_locked');
-      setIsUnlocked(true);
-      setPasskey('');
-    } else {
-      setErrorMsg('Invalid administrative passkey. Please verify your credentials.');
+    try {
+      const clean = passkey.trim();
+      const hash = await sha256Hex(clean);
+      if (AUTHORIZED_PASSKEY_HASHES.has(hash)) {
+        sessionStorage.setItem(ADMIN_SESSION_KEY, 'unlocked');
+        sessionStorage.setItem(ADMIN_PASSKEY_STORAGE_KEY, clean);
+        localStorage.setItem(ADMIN_PASSKEY_STORAGE_KEY, clean);
+        sessionStorage.removeItem('pet_admin_explicit_locked');
+        setIsUnlocked(true);
+        setPasskey('');
+      } else {
+        setErrorMsg('Invalid administrative passkey. Please verify your credentials.');
+      }
+    } catch (err) {
+      setErrorMsg('Cryptographic validation error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleLockConsole = () => {
     sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_PASSKEY_STORAGE_KEY);
+    localStorage.removeItem(ADMIN_PASSKEY_STORAGE_KEY);
     sessionStorage.setItem('pet_admin_explicit_locked', 'true');
     setIsUnlocked(false);
     setPasskey('');

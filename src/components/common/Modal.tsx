@@ -22,13 +22,17 @@ export const Modal: React.FC<ModalProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
+    const savedY = window.scrollY || document.documentElement.scrollTop || 0;
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
+      if (savedY > 0) {
+        window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior });
+      }
     };
   }, [isOpen, onClose]);
 

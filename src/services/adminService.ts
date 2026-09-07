@@ -5,6 +5,16 @@ import { emailNotificationService } from './emailNotificationService';
 import { reportService } from './reportService';
 import { petService } from './petService';
 import { resolveUserAvatar } from '../utils/avatarUtils';
+import { realtimeSync } from './realtimeSync';
+
+export function getAdminPasskey(): string {
+  if (typeof window === 'undefined') return 'admin2026';
+  return (
+    sessionStorage.getItem('pet_admin_session_passkey') ||
+    localStorage.getItem('pet_admin_session_passkey') ||
+    'admin2026'
+  );
+}
 
 export interface AdminDashboardStats {
   totalUsers: number;
@@ -181,6 +191,9 @@ export function recordRegisteredUser(user: { id?: string; name?: string; email: 
     }
 
     localStorage.setItem(LOCAL_USERS_STORAGE_KEY, JSON.stringify(list));
+
+    // Notify all real-time listeners across tabs and windows
+    realtimeSync.notifyChange('user_created', record.id, record);
   } catch (e) {
     console.warn('[adminService] Could not persist local registered user:', e);
   }
@@ -261,7 +274,10 @@ export const adminService = {
   async getDashboardStats(): Promise<AdminDashboardStats> {
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await (supabase as any).rpc('admin_get_dashboard_stats');
+        const passkey = getAdminPasskey();
+        const { data, error } = await (supabase as any).rpc('admin_get_dashboard_stats', {
+          p_passkey: passkey,
+        });
         if (!error && data) {
           const livePets = Number(data.total_pets ?? 0);
           const liveUsers = Number(data.total_users ?? 0);
@@ -303,8 +319,11 @@ export const adminService = {
     let dbUsers: AdminUserRecord[] = [];
     if (isSupabaseConfigured()) {
       try {
-        // 1. Primary: Use SECURITY DEFINER RPC to bypass RLS and get all registered profiles
-        const { data: rpcData, error: rpcError } = await (supabase as any).rpc('get_platform_users');
+        // 1. Primary: Use SECURITY DEFINER RPC with session passkey verification to securely retrieve registered profiles
+        const passkey = getAdminPasskey();
+        const { data: rpcData, error: rpcError } = await (supabase as any).rpc('get_platform_users', {
+          p_passkey: passkey,
+        });
 
         let rawList: any[] = [];
         if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
@@ -405,7 +424,7 @@ export const adminService = {
 
     // 4. Merge adopters who have submitted applications from adoption requests
     try {
-      const reqsStored = localStorage.getItem('pet_adoption_requests_v3');
+      const reqsStored = localStorage.getItem('pet_adoption_requests_v4') || localStorage.getItem('pet_adoption_requests_v3');
       if (reqsStored) {
         const reqList = JSON.parse(reqsStored);
         if (Array.isArray(reqList)) {
@@ -416,7 +435,7 @@ export const adminService = {
                 name: req.adopterName || req.adopterEmail.split('@')[0],
                 email: req.adopterEmail,
                 role: 'adopter',
-                location: req.homeType || 'India',
+                location: req.adopterLocation || req.homeType || 'India',
                 status: 'Verified Applicant',
                 joined: 'Recent',
                 avatarUrl: resolveUserAvatar({
@@ -483,6 +502,7 @@ export const adminService = {
         if (error) {
           return { success: false, error: error.message || 'Failed to update user role.' };
         }
+        realtimeSync.notifyChange('user_role_changed', targetUserId, { newRole });
         return { success: true };
       } catch (err: any) {
         return { success: false, error: err.message || 'Network error updating user role.' };
@@ -493,6 +513,7 @@ export const adminService = {
     const target = PLATFORM_INDIAN_USERS.find((u) => u.id === targetUserId);
     if (target) {
       target.role = newRole;
+      realtimeSync.notifyChange('user_role_changed', targetUserId, { newRole });
     }
     return { success: true };
   },

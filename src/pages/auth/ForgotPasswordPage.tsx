@@ -8,10 +8,12 @@ import { authService } from '../../services/authService';
 import { Mail, ArrowLeft, CheckCircle2, AlertCircle, KeyRound, RefreshCw, Lock, Eye, EyeOff } from 'lucide-react';
 
 export const ForgotPasswordPage: React.FC = () => {
+  const [mode, setMode] = useState<'link' | 'code'>('link');
   const [step, setStep] = useState<'request' | 'verify'>('request');
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export const ForgotPasswordPage: React.FC = () => {
   const { realLoginWithOtp, realVerifyOtp, realResendOtp } = useAuth();
   const navigate = useNavigate();
 
-  // Rate-limiting UX countdown for OTP resend (30s)
+  // Rate-limiting UX countdown for OTP/link resend (30s)
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setTimeout(() => {
@@ -33,6 +35,45 @@ export const ForgotPasswordPage: React.FC = () => {
     }, 1000);
     return () => clearTimeout(timer);
   }, [resendCooldown]);
+
+  // Handle Send Password Reset Link (Supabase Auth resetPasswordForEmail)
+  const handleSendResetLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setInfoMessage(null);
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      await authService.resetPasswordForEmail(cleanEmail, redirectUrl);
+      setLoading(false);
+
+      // Anti-enumeration: Always show uniform confirmation message
+      setLinkSent(true);
+      setResendCooldown(30);
+      setInfoMessage('If an account exists with this email, a password reset link has been sent.');
+      showToast('Password reset link sent! Please check your email.', 'success');
+    } catch (err: any) {
+      setLoading(false);
+      // Even on error, show the anti-enumeration message unless it's a rate limit or network issue
+      const msg = err?.message || '';
+      if (msg.includes('rate limit') || msg.includes('too many requests')) {
+        setErrorMessage('Too many requests. Please wait a few moments before trying again.');
+      } else if (msg.includes('Failed to fetch') || msg.includes('network')) {
+        setErrorMessage('Unable to reach the server. Please check your internet connection.');
+      } else {
+        setLinkSent(true);
+        setInfoMessage('If an account exists with this email, a password reset link has been sent.');
+      }
+    }
+  };
 
   // Step 1: Request 6-digit email code
   const handleSendCode = async (e: React.FormEvent) => {
@@ -166,26 +207,16 @@ export const ForgotPasswordPage: React.FC = () => {
             <Logo size="md" />
           </div>
 
-          {step === 'request' ? (
-            <>
-              <h2 className="font-display text-2xl font-extrabold text-brand-950">
-                Login with Email Code
-              </h2>
-              <p className="text-xs text-brand-muted">
-                Forgot your password? Enter your email to receive a secure 6-digit verification code.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="font-display text-2xl font-extrabold text-brand-950">
-                Check your email
-              </h2>
-              <p className="text-xs text-brand-muted">
-                We've sent a 6-digit verification code to{' '}
-                <strong className="text-brand-900 font-semibold">{email}</strong>.
-              </p>
-            </>
-          )}
+          <h2 className="font-display text-2xl font-extrabold text-brand-950">
+            {mode === 'link' ? 'Reset Password' : step === 'request' ? 'Login with Email Code' : 'Check your email'}
+          </h2>
+          <p className="text-xs text-brand-muted">
+            {mode === 'link'
+              ? 'Enter your registered email address and we will send you a password reset link.'
+              : step === 'request'
+              ? 'Enter your email to receive a secure 6-digit verification code.'
+              : `We've sent a 6-digit verification code to ${email}.`}
+          </p>
         </div>
 
         {/* Informational Banner */}
@@ -204,53 +235,156 @@ export const ForgotPasswordPage: React.FC = () => {
           </div>
         )}
 
-        {step === 'request' ? (
-          <form onSubmit={handleSendCode} className="space-y-4">
-            <div>
-              <label
-                htmlFor="forgot-email"
-                className="block text-xs font-bold text-brand-800 uppercase tracking-wider mb-1.5"
-              >
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-400" />
-                <input
-                  id="forgot-email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  autoFocus
-                  className="w-full pl-11 pr-4 py-3 rounded-2xl border border-brand-200 text-sm font-medium text-brand-950 focus:ring-2 focus:ring-brand-500"
-                />
+        {/* MODE 1: Email Reset Link (Default Flow) */}
+        {mode === 'link' && (
+          <>
+            {linkSent ? (
+              <div className="text-center space-y-4 py-3 animate-fade-in">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-sm text-brand-950">Check your inbox</h3>
+                  <p className="text-xs text-brand-800 leading-relaxed max-w-sm mx-auto">
+                    If an account exists with <strong className="text-brand-950">{email}</strong>, a password reset link has been sent.
+                  </p>
+                </div>
+                <div className="pt-2 space-y-2">
+                  <Link to="/login" className="block w-full">
+                    <Button variant="primary" size="lg" className="w-full shadow-soft">
+                      Return to Login
+                    </Button>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLinkSent(false);
+                      setInfoMessage(null);
+                    }}
+                    className="text-xs font-semibold text-brand-600 hover:text-brand-900 transition-colors"
+                  >
+                    Didn't receive email? Try again
+                  </button>
+                </div>
               </div>
-              <p className="text-[11px] text-brand-muted mt-1.5">
-                No password reset required. The code lets you log in directly.
-              </p>
-            </div>
+            ) : (
+              <form onSubmit={handleSendResetLink} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="forgot-email"
+                    className="block text-xs font-bold text-brand-800 uppercase tracking-wider mb-1.5"
+                  >
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-400" />
+                    <input
+                      id="forgot-email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      autoFocus
+                      className="w-full pl-11 pr-4 py-3 rounded-2xl border border-brand-200 text-sm font-medium text-brand-950 focus:ring-2 focus:ring-brand-500"
+                    />
+                  </div>
+                  <p className="text-[11px] text-brand-muted mt-1.5">
+                    We will send a secure password recovery link to your inbox.
+                  </p>
+                </div>
 
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              isLoading={loading}
-              className="w-full shadow-soft"
-              leftIcon={<KeyRound className="w-4 h-4" />}
-            >
-              Send Verification Code
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyAndResetPassword} className="space-y-4 animate-fade-in">
-            <div>
-              <label
-                htmlFor="forgot-otp-input"
-                className="block text-xs font-bold text-brand-800 uppercase tracking-wider mb-1.5 text-center"
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  isLoading={loading}
+                  className="w-full shadow-soft"
+                >
+                  Send Reset Link
+                </Button>
+
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('code');
+                      setErrorMessage(null);
+                      setInfoMessage(null);
+                    }}
+                    className="text-xs font-semibold text-brand-600 hover:text-brand-900 transition-colors"
+                  >
+                    Or login with a 6-digit email code instead →
+                  </button>
+                </div>
+              </form>
+            )}
+          </>
+        )}
+
+        {/* MODE 2: OTP Code Request or Verify */}
+        {mode === 'code' && (
+          step === 'request' ? (
+            <form onSubmit={handleSendCode} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="forgot-email"
+                  className="block text-xs font-bold text-brand-800 uppercase tracking-wider mb-1.5"
+                >
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-400" />
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    autoFocus
+                    className="w-full pl-11 pr-4 py-3 rounded-2xl border border-brand-200 text-sm font-medium text-brand-950 focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <p className="text-[11px] text-brand-muted mt-1.5">
+                  No password reset required. The code lets you log in directly.
+                </p>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                isLoading={loading}
+                className="w-full shadow-soft"
+                leftIcon={<KeyRound className="w-4 h-4" />}
               >
-                6-Digit Verification Code
-              </label>
+                Send Verification Code
+              </Button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('link');
+                    setErrorMessage(null);
+                    setInfoMessage(null);
+                  }}
+                  className="text-xs font-semibold text-brand-600 hover:text-brand-900 transition-colors"
+                >
+                  ← Back to Email Reset Link
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyAndResetPassword} className="space-y-4 animate-fade-in">
+              <div>
+                <label
+                  htmlFor="forgot-otp-input"
+                  className="block text-xs font-bold text-brand-800 uppercase tracking-wider mb-1.5 text-center"
+                >
+                  6-Digit Verification Code
+                </label>
               <div className="relative">
                 <input
                   id="forgot-otp-input"
@@ -364,7 +498,7 @@ export const ForgotPasswordPage: React.FC = () => {
               </button>
             </div>
           </form>
-        )}
+        ) )}
 
         <div className="text-center pt-2 border-t border-brand-100">
           <Link

@@ -126,7 +126,10 @@ export const AdminTestBenchPage: React.FC = () => {
     updateTest('rpc_stats', { status: 'running' });
     const start = performance.now();
     try {
-      const { data, error } = await (supabase as any).rpc('admin_get_dashboard_stats');
+      const passkey = typeof window !== 'undefined' ? sessionStorage.getItem('pet_admin_session_passkey') : null;
+      const { data, error } = await (supabase as any).rpc('admin_get_dashboard_stats', {
+        p_passkey: passkey || undefined,
+      });
       const duration = Math.round(performance.now() - start);
 
       if (error) {
@@ -156,7 +159,10 @@ export const AdminTestBenchPage: React.FC = () => {
     updateTest('notifications', { status: 'running' });
     const start = performance.now();
     try {
-      const { data, error } = await (supabase as any).rpc('get_admin_notifications');
+      const passkey = typeof window !== 'undefined' ? sessionStorage.getItem('pet_admin_session_passkey') : null;
+      const { data, error } = await (supabase as any).rpc('get_admin_notifications', {
+        p_passkey: passkey || undefined,
+      });
       const duration = Math.round(performance.now() - start);
 
       if (error) {

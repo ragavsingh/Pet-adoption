@@ -27,6 +27,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
+import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
 
 // Adopter Pages
 import { AdopterDashboard } from './pages/adopter/AdopterDashboard';
@@ -88,6 +89,7 @@ export const App: React.FC = () => {
                     <Route path="/signup" element={<SignupPage />} />
                     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
+                    <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
                     {/* Adoption Certificate / Success */}
                     <Route path="/adoption-success" element={<AdoptionSuccessPage />} />
@@ -126,17 +128,19 @@ export const App: React.FC = () => {
                     </Route>
                   </Route>
 
-                  {/* Dedicated Standalone Admin Portal (Self-Gated by Admin Security Gateway & Passkey) */}
-                  <Route path="/admin" element={<AdminLayout />}>
-                    <Route path="dashboard" element={<AdminDashboard />} />
-                    <Route path="users" element={<AdminUsersPage />} />
-                    <Route path="providers" element={<AdminProvidersPage />} />
-                    <Route path="pets" element={<AdminPetsPage />} />
-                    <Route path="requests" element={<AdminRequestsPage />} />
-                    <Route path="reports" element={<AdminReportsPage />} />
-                    <Route path="test-bench" element={<AdminTestBenchPage />} />
-                    <Route path="settings" element={<AdminSettingsPage />} />
-                    <Route index element={<Navigate to="dashboard" replace />} />
+                  {/* Dedicated Standalone Admin Portal (Protected strictly by role: admin) */}
+                  <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                    <Route path="/admin" element={<AdminLayout />}>
+                      <Route path="dashboard" element={<AdminDashboard />} />
+                      <Route path="users" element={<AdminUsersPage />} />
+                      <Route path="providers" element={<AdminProvidersPage />} />
+                      <Route path="pets" element={<AdminPetsPage />} />
+                      <Route path="requests" element={<AdminRequestsPage />} />
+                      <Route path="reports" element={<AdminReportsPage />} />
+                      <Route path="test-bench" element={<AdminTestBenchPage />} />
+                      <Route path="settings" element={<AdminSettingsPage />} />
+                      <Route index element={<Navigate to="dashboard" replace />} />
+                    </Route>
                   </Route>
 
                   {/* Catch all fallback */}

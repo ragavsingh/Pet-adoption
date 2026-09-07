@@ -11,9 +11,6 @@
     --brand-ink: #1D1B19;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
 
   body {
     background-color: #FAF9F6;

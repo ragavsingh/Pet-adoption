@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Logo } from '../common/Logo';
 import { Button } from '../common/Button';
 import { useAuth } from '../../contexts/AuthContext';
@@ -40,6 +40,9 @@ export const Navbar: React.FC = () => {
   const { favoriteCount } = useFavorites();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const navigate = useNavigate();
+  const location = useLocation();
+  const prevPathnameRef = useRef<string>(location.pathname);
+  const savedScrollYRef = useRef<number>(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,17 +52,22 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Lock body scroll on mobile when the mobile navigation panel is open
+  // Lock body scroll on mobile when the mobile navigation panel is open while preserving scroll position
   useEffect(() => {
     if (mobileMenuOpen) {
+      savedScrollYRef.current = window.scrollY || document.documentElement.scrollTop || 0;
+      prevPathnameRef.current = location.pathname;
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
+      if (prevPathnameRef.current === location.pathname && savedScrollYRef.current > 0) {
+        window.scrollTo({ top: savedScrollYRef.current, behavior: 'instant' as ScrollBehavior });
+      }
     }
     return () => {
       document.body.style.overflow = '';
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, location.pathname]);
 
   // Standard dropdown behavior: close on outside click, Escape key, or page scrolling
   useEffect(() => {

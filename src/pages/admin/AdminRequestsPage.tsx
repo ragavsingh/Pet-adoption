@@ -163,6 +163,8 @@ export const AdminRequestsPage: React.FC = () => {
         event.type === 'adoption_request_updated' ||
         event.type === 'adoption_request_created' ||
         event.type === 'foster_trial_updated' ||
+        event.type === 'user_updated' ||
+        event.type === 'user_created' ||
         event.type === 'all'
       ) {
         loadRequests(true);
@@ -341,11 +343,16 @@ export const AdminRequestsPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="font-semibold text-brand-800 block">{r.adopterName}</span>
-                        <span className="text-[10px] text-brand-500">{r.homeType || 'Verified Home'}</span>
+                        <span className="font-bold text-brand-950 text-sm block">{r.adopterName}</span>
+                        <span className="text-[11px] text-brand-600 font-medium block">
+                          Adopter{r.adopterLocation ? ` • ${r.adopterLocation}` : (r.homeType ? ` • ${r.homeType}` : '')}
+                        </span>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="text-brand-700 font-medium block">{r.providerName}</span>
+                        <span className="text-brand-900 font-semibold block">{r.providerName}</span>
+                        <span className="text-[10px] text-brand-500 font-normal block">
+                          {r.providerLocation ? `Shelter • ${r.providerLocation}` : 'Shelter / Care Provider'}
+                        </span>
                       </td>
                       <td className="py-3.5 px-4">
                         <StatusBadge status={r.status} size="sm" />

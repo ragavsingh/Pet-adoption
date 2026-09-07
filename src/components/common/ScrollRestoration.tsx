@@ -5,8 +5,7 @@ import {
   getSessionHistoryStack,
   saveSessionHistoryStack,
 } from '../../hooks/useSmartBack';
-
-const SCROLL_STORAGE_KEY = 'pet_adoption_scroll_history_v3';
+const SCROLL_STORAGE_KEY = 'pet_adoption_scroll_history_v4';
 
 interface ScrollEntry {
   x: number;
@@ -14,40 +13,30 @@ interface ScrollEntry {
   timestamp: number;
 }
 
-/**
- * Universal Multi-Level Scroll Restoration and Navigation History Engine
- *
- * 1. Step-by-Step Multi-Level Navigation:
- *    Maintains the full navigation stack across multi-step journeys
- *    (e.g., Page 1 [Find Pets] -> Page 2 [Pet Profile] -> Page 3 [Adoption Details]).
- *    When returning back (Page 3 -> Page 2 -> Page 1), restores each page's exact
- *    scroll position independently using unique history keys.
- *
- * 2. Zero-Overwrite Protection:
- *    Ensures that route unmount transitions and transient browser layout shifts
- *    never overwrite a valid positive scroll position with zero.
- *
- * 3. Asynchronous Content Observation:
- *    Watches DOM expansion via ResizeObserver and MutationObserver so pages that
- *    fetch listings or records from Supabase (e.g., PetsPage, PetDetailsPage)
- *    restore to their exact scroll position once the content finishes rendering,
- *    preventing browser clamping to 0.
- *
- * 4. Clean Forward Navigation:
- *    When intentionally opening a new section from the navbar or footer,
- *    starts smoothly and cleanly from the top (0, 0).
- */
 export const ScrollRestoration: React.FC = () => {
   const location = useLocation();
   const navigationType = useNavigationType(); // 'POP' | 'PUSH' | 'REPLACE'
 
   const prevLocationRef = useRef<{ pathname: string; search: string; key: string } | null>(null);
   const isRestoringRef = useRef<boolean>(false);
+  const userInteractedRef = useRef<boolean>(false);
+  const targetRestorationYRef = useRef<number>(0);
+  const activeKeyRef = useRef<string>(location.key);
 
   // Cached positions by unique history key (location.key)
   const keyPositionsRef = useRef<Record<string, ScrollEntry>>((() => {
     try {
       const stored = sessionStorage.getItem(`${SCROLL_STORAGE_KEY}_keys`);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  })());
+
+  // Cached positions by history index (window.history.state.idx) for multi-level navigation
+  const idxPositionsRef = useRef<Record<number, ScrollEntry>>((() => {
+    try {
+      const stored = sessionStorage.getItem(`${SCROLL_STORAGE_KEY}_idx`);
       return stored ? JSON.parse(stored) : {};
     } catch {
       return {};
@@ -67,6 +56,9 @@ export const ScrollRestoration: React.FC = () => {
   // Session navigation stack tracking
   const historyStackRef = useRef<HistoryStackItem[]>(getSessionHistoryStack());
 
+  // Mutable ref of the latest known scroll position to eliminate throttled lag
+  const latestScrollPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   // Set browser history scrollRestoration to manual so native browser doesn't conflict with async SPA renders
   useEffect(() => {
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
@@ -84,7 +76,17 @@ export const ScrollRestoration: React.FC = () => {
     if (mainContainer && mainContainer.scrollTop > 0) {
       return mainContainer.scrollTop;
     }
-    return window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+    return (
+      window.scrollY ||
+      window.pageYOffset ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0
+    );
+  };
+
+  const getScrollX = (): number => {
+    return window.scrollX || window.pageXOffset || document.documentElement.scrollLeft || 0;
   };
 
   const setScrollY = (y: number, x: number = 0) => {
@@ -101,37 +103,105 @@ export const ScrollRestoration: React.FC = () => {
   const persistToSession = () => {
     try {
       sessionStorage.setItem(`${SCROLL_STORAGE_KEY}_keys`, JSON.stringify(keyPositionsRef.current));
+      sessionStorage.setItem(`${SCROLL_STORAGE_KEY}_idx`, JSON.stringify(idxPositionsRef.current));
       sessionStorage.setItem(`${SCROLL_STORAGE_KEY}_paths`, JSON.stringify(pathPositionsRef.current));
     } catch {
       // Ignore storage quota limits
     }
   };
 
-  // Passive, real-time throttled scroll tracker while actively viewing the page
+  /**
+   * Synchronously records the current scroll position for the active page.
+   * Called immediately on link clicks, touch events, and before navigation transitions.
+   */
+  const recordCurrentPosition = (targetKey?: string, targetPath?: string, targetSearch?: string) => {
+    if (isRestoringRef.current && !userInteractedRef.current) return;
+
+    const y = getScrollY();
+    const x = getScrollX();
+    const currentY = y > 0 ? y : latestScrollPosRef.current.y;
+    const currentX = x > 0 ? x : latestScrollPosRef.current.x;
+
+    if (currentY <= 0) return;
+
+    const k = targetKey || activeKeyRef.current || location.key;
+    const p = targetPath || location.pathname;
+    const s = targetSearch !== undefined ? targetSearch : location.search;
+
+    const entry: ScrollEntry = { x: currentX, y: currentY, timestamp: Date.now() };
+
+    if (k) keyPositionsRef.current[k] = entry;
+    if (p) pathPositionsRef.current[p] = entry;
+    if (s && p) pathPositionsRef.current[p + s] = entry;
+
+    // Only update idxPositionsRef when snapshotting the current active page, never retroactively
+    if (!targetKey) {
+      const historyIdx = window.history.state?.idx;
+      if (typeof historyIdx === 'number') {
+        idxPositionsRef.current[historyIdx] = entry;
+      }
+    }
+
+    persistToSession();
+  };
+
+  // Passive, real-time scroll tracker while actively viewing the page
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     let ticking = false;
 
     const handleScroll = () => {
-      // Never overwrite real saved positions during active restoration or transient layout shifts
-      if (isRestoringRef.current) return;
+      const y = getScrollY();
+      const x = getScrollX();
+
+      if (y > 0) {
+        latestScrollPosRef.current = { x, y };
+      }
+
+      // Do not overwrite real saved positions during active programmatic restoration
+      if (isRestoringRef.current && !userInteractedRef.current) return;
+
+      // If user has not physically touched or scrolled the page,
+      // prevent transient layout shifts or 0-resets from overwriting the target position
+      if (!userInteractedRef.current && targetRestorationYRef.current > 0) {
+        if (Math.abs(y - targetRestorationYRef.current) > 40) {
+          return;
+        }
+      }
 
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const y = getScrollY();
-          const x = window.scrollX || window.pageXOffset || 0;
-          const entry: ScrollEntry = { x, y, timestamp: Date.now() };
+          if (isRestoringRef.current && !userInteractedRef.current) {
+            ticking = false;
+            return;
+          }
 
-          // Zero-Overwrite Guard: Only update if y > 0 or if no previous position exists for this key
-          if (y > 0 || !keyPositionsRef.current[location.key]) {
+          if (!userInteractedRef.current && targetRestorationYRef.current > 0) {
+            const checkY = getScrollY();
+            if (Math.abs(checkY - targetRestorationYRef.current) > 40) {
+              ticking = false;
+              return;
+            }
+          }
+
+          const currentY = getScrollY();
+          const currentX = getScrollX();
+          const entry: ScrollEntry = { x: currentX, y: currentY, timestamp: Date.now() };
+
+          if (currentY > 0 || !keyPositionsRef.current[location.key]) {
             keyPositionsRef.current[location.key] = entry;
           }
-          if (y > 0 || !pathPositionsRef.current[location.pathname]) {
+          if (currentY > 0 || !pathPositionsRef.current[location.pathname]) {
             pathPositionsRef.current[location.pathname] = entry;
           }
-          if (location.search && (y > 0 || !pathPositionsRef.current[location.pathname + location.search])) {
+          if (location.search && (currentY > 0 || !pathPositionsRef.current[location.pathname + location.search])) {
             pathPositionsRef.current[location.pathname + location.search] = entry;
+          }
+
+          const historyIdx = window.history.state?.idx;
+          if (typeof historyIdx === 'number' && (currentY > 0 || !idxPositionsRef.current[historyIdx])) {
+            idxPositionsRef.current[historyIdx] = entry;
           }
 
           persistToSession();
@@ -141,25 +211,60 @@ export const ScrollRestoration: React.FC = () => {
       }
     };
 
+    // User touch/manual interaction detection: releases restoration lock when user physically touches/drags
+    const handleUserInteraction = () => {
+      userInteractedRef.current = true;
+      isRestoringRef.current = false;
+    };
+
+    // Global tap/click capture on links: guarantees scroll position is captured before route change
+    const handleGlobalLinkTap = (e: MouseEvent | TouchEvent) => {
+      const target = (e.target as HTMLElement)?.closest(
+        'a, button, [role="link"], [role="button"], [data-nav], [data-pet-card]'
+      );
+      if (target) {
+        recordCurrentPosition();
+      }
+    };
+
+    const handlePopState = () => {
+      recordCurrentPosition();
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    window.addEventListener('touchmove', handleUserInteraction, { passive: true });
+    window.addEventListener('wheel', handleUserInteraction, { passive: true });
+    window.addEventListener('mousedown', handleUserInteraction, { passive: true });
+    window.addEventListener('pointerdown', handleUserInteraction, { passive: true });
+    window.addEventListener('keydown', handleUserInteraction, { passive: true });
+    window.addEventListener('popstate', handlePopState);
+
+    document.addEventListener('click', handleGlobalLinkTap, { capture: true });
+    document.addEventListener('touchstart', handleGlobalLinkTap, { capture: true, passive: true });
+
+    window.addEventListener('beforeunload', () => recordCurrentPosition());
+    window.addEventListener('pagehide', () => recordCurrentPosition());
+
     const mainContainers = document.querySelectorAll('main.overflow-y-auto');
     mainContainers.forEach((el) => el.addEventListener('scroll', handleScroll, { passive: true }));
 
     return () => {
-      // Before route change unmounts, snapshot final positive scroll position
-      const finalY = getScrollY();
-      const finalX = window.scrollX || window.pageXOffset || 0;
-      if (finalY > 0) {
-        const entry: ScrollEntry = { x: finalX, y: finalY, timestamp: Date.now() };
-        keyPositionsRef.current[location.key] = entry;
-        pathPositionsRef.current[location.pathname] = entry;
-        if (location.search) {
-          pathPositionsRef.current[location.pathname + location.search] = entry;
-        }
-        persistToSession();
-      }
+      // Snapshot final position before route unmounts
+      recordCurrentPosition();
 
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('touchstart', handleUserInteraction);
+      window.removeEventListener('touchmove', handleUserInteraction);
+      window.removeEventListener('wheel', handleUserInteraction);
+      window.removeEventListener('mousedown', handleUserInteraction);
+      window.removeEventListener('pointerdown', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+      window.removeEventListener('popstate', handlePopState);
+
+      document.removeEventListener('click', handleGlobalLinkTap, { capture: true });
+      document.removeEventListener('touchstart', handleGlobalLinkTap, { capture: true });
+
       mainContainers.forEach((el) => el.removeEventListener('scroll', handleScroll));
     };
   }, [location.key, location.pathname, location.search]);
@@ -170,6 +275,9 @@ export const ScrollRestoration: React.FC = () => {
 
     const prev = prevLocationRef.current;
     const current = location;
+
+    // Reset user interaction flag on route change
+    userInteractedRef.current = false;
 
     // Track Navigation Stack
     const currentItem: HistoryStackItem = {
@@ -230,87 +338,119 @@ export const ScrollRestoration: React.FC = () => {
       return;
     }
 
-    // Case 4: Navigation Back (POP) or returning to parent listing/previous page in stack
+    // Case 4: Navigation Back (POP)
     const isPop = navigationType === 'POP';
-
-    const isChildToParent = Boolean(
-      prev &&
-      prev.pathname !== current.pathname &&
-      (prev.pathname.startsWith(current.pathname === '/' ? '///' : `${current.pathname}/`) ||
-       historyStackRef.current.some((item, idx) => idx < historyStackRef.current.length - 1 && item.pathname === current.pathname))
-    );
 
     // Determine target restoration position
     let targetPos: ScrollEntry | null = null;
 
     if (isPop) {
-      // 1. By unique history key for exact historical position in stack
-      targetPos = keyPositionsRef.current[current.key] ||
-                  pathPositionsRef.current[current.pathname + current.search] ||
-                  pathPositionsRef.current[current.pathname] || null;
-    } else if (isChildToParent) {
-      // 2. By path + search or path when returning from a detail/child page
-      targetPos = pathPositionsRef.current[current.pathname + current.search] ||
-                  pathPositionsRef.current[current.pathname] || null;
+      const historyIdx = window.history.state?.idx;
+      const idxEntry = typeof historyIdx === 'number' ? idxPositionsRef.current[historyIdx] : null;
+      const keyEntry = current.key ? keyPositionsRef.current[current.key] : null;
+      const queryEntry = pathPositionsRef.current[current.pathname + current.search];
+      const pathEntry = pathPositionsRef.current[current.pathname];
+
+      // Prioritize entry with valid positive scroll position
+      targetPos =
+        (idxEntry && idxEntry.y > 0 ? idxEntry : null) ||
+        (keyEntry && keyEntry.y > 0 ? keyEntry : null) ||
+        (queryEntry && queryEntry.y > 0 ? queryEntry : null) ||
+        (pathEntry && pathEntry.y > 0 ? pathEntry : null) ||
+        idxEntry ||
+        keyEntry ||
+        queryEntry ||
+        pathEntry ||
+        null;
     }
 
-    // If we have a valid saved scroll position > 0, restore it asynchronously
-    if (targetPos && targetPos.y > 0) {
+    // If we have a valid saved scroll position > 0 during Back navigation, restore it
+    if (isPop && targetPos && targetPos.y > 0) {
       performAsyncScrollRestoration(targetPos.y, targetPos.x);
     } else {
-      // Otherwise, this is a clean, intentional navigation to a new page -> start from top (0, 0)
+      // Otherwise, this is an intentional new page navigation (PUSH/REPLACE) -> start naturally at the top (0, 0)
       resetScrollToTop();
     }
   }, [location.pathname, location.search, location.hash, location.key, navigationType]);
 
   const performAsyncScrollRestoration = (targetY: number, targetX: number = 0) => {
     isRestoringRef.current = true;
+    userInteractedRef.current = false;
+    targetRestorationYRef.current = targetY;
 
     const attemptScroll = (): boolean => {
+      // If user started interacting with touch or wheel, abort programmatic restoration
+      if (userInteractedRef.current) return true;
+
       const scrollHeight = Math.max(
         document.documentElement.scrollHeight,
         document.body.scrollHeight
       );
-      const clientHeight = window.innerHeight;
+      const clientHeight = window.innerHeight || document.documentElement.clientHeight || 0;
       const maxScroll = Math.max(0, scrollHeight - clientHeight);
 
-      // Check if page height has expanded enough to satisfy target scroll position
-      if (scrollHeight >= targetY + 60 || maxScroll >= targetY) {
+      // Mobile dynamic toolbar & address bar collapse tolerance:
+      // On mobile phones, the browser address bar collapses/expands by 50-70px.
+      // If maxScroll has expanded to within 60px of targetY, we can fulfill the target scroll position.
+      if (maxScroll >= targetY - 60) {
         setScrollY(targetY, targetX);
-        return true;
+        const actualY = getScrollY();
+        const isNearTarget = Math.abs(actualY - targetY) <= 40 || actualY >= targetY - 50;
+        const isNearBottom = targetY >= maxScroll - 70 && actualY >= maxScroll - 50;
+        if (isNearTarget || isNearBottom) {
+          return true;
+        }
       }
 
-      // If page is still loading async cards, scroll as far as possible for now
+      // If page is still loading async cards/images, scroll as far as possible down
       if (maxScroll > 0) {
         setScrollY(Math.min(targetY, maxScroll), targetX);
       }
       return false;
     };
 
-    // If document is already tall enough (e.g. cached), scroll immediately
+    // Phase 1: Immediate attempt
     if (attemptScroll()) {
+      // Verify and lock on next animation frame
       requestAnimationFrame(() => {
-        setScrollY(targetY, targetX);
+        if (!userInteractedRef.current) {
+          setScrollY(targetY, targetX);
+        }
         setTimeout(() => {
-          isRestoringRef.current = false;
-        }, 60);
+          if (!userInteractedRef.current) {
+            setScrollY(targetY, targetX);
+          }
+          setTimeout(() => {
+            if (!userInteractedRef.current) {
+              isRestoringRef.current = false;
+              targetRestorationYRef.current = 0;
+            }
+          }, 150);
+        }, 100);
       });
       return;
     }
 
-    // If document is not tall enough yet (e.g. PetsPage is fetching listings from Supabase),
-    // set up observers to retry the moment async cards are rendered into the DOM
+    // Phase 2: Asynchronous DOM expansion observer (for async Supabase listings, images loading)
     let cleanupTimer: any = null;
     let observer: MutationObserver | null = null;
     let resizeObserver: ResizeObserver | null = null;
+    let pollInterval: any = null;
+    let lastHeight = 0;
+    let stableTicks = 0;
 
     const finish = () => {
       if (observer) observer.disconnect();
       if (resizeObserver) resizeObserver.disconnect();
       if (cleanupTimer) clearTimeout(cleanupTimer);
+      if (pollInterval) clearInterval(pollInterval);
+
       setTimeout(() => {
-        isRestoringRef.current = false;
-      }, 100);
+        if (!userInteractedRef.current) {
+          isRestoringRef.current = false;
+          targetRestorationYRef.current = 0;
+        }
+      }, 150);
     };
 
     const handleDomUpdate = () => {
@@ -321,25 +461,43 @@ export const ScrollRestoration: React.FC = () => {
 
     if (typeof MutationObserver !== 'undefined') {
       observer = new MutationObserver(handleDomUpdate);
-      observer.observe(document.body, { childList: true, subtree: true });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true });
     }
 
     if (typeof ResizeObserver !== 'undefined') {
       resizeObserver = new ResizeObserver(handleDomUpdate);
+      resizeObserver.observe(document.documentElement);
       resizeObserver.observe(document.body);
     }
 
-    // Polling interval check every 40ms as fallback
-    const intervalId = setInterval(() => {
+    // High frequency polling fallback (every 25ms)
+    pollInterval = setInterval(() => {
       if (attemptScroll()) {
-        clearInterval(intervalId);
         finish();
+        return;
       }
-    }, 40);
 
-    // Safety timeout: stop observing after 2.5 seconds
+      const currentHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight
+      );
+      if (currentHeight === lastHeight && currentHeight > 0) {
+        stableTicks++;
+        // If document height has been completely stable for 350ms (14 ticks * 25ms) and readyState is complete
+        if (stableTicks >= 14 && (typeof document !== 'undefined' && document.readyState === 'complete')) {
+          const clientHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+          const currentMaxScroll = Math.max(0, currentHeight - clientHeight);
+          setScrollY(Math.min(targetY, currentMaxScroll), targetX);
+          finish();
+        }
+      } else {
+        lastHeight = currentHeight;
+        stableTicks = 0;
+      }
+    }, 25);
+
+    // Safety timeout: finalize after 2.5 seconds
     cleanupTimer = setTimeout(() => {
-      clearInterval(intervalId);
       attemptScroll();
       finish();
     }, 2500);
@@ -347,19 +505,19 @@ export const ScrollRestoration: React.FC = () => {
 
   const resetScrollToTop = () => {
     isRestoringRef.current = true;
+    userInteractedRef.current = false;
+    targetRestorationYRef.current = 0;
     setScrollY(0, 0);
 
-    // Run on successive animation frames to ensure layout doesn't bounce
     requestAnimationFrame(() => {
       setScrollY(0, 0);
       requestAnimationFrame(() => {
         setScrollY(0, 0);
         setTimeout(() => {
           isRestoringRef.current = false;
-        }, 50);
+        }, 80);
       });
     });
   };
-
   return null;
 };
