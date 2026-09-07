@@ -222,14 +222,14 @@ export const Navbar: React.FC = () => {
 
                 {/* Notifications Dropdown */}
                 {notifDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-surface rounded-3xl shadow-soft-lg border border-brand-200 p-4 z-50 animate-fade-in">
-                    <div className="flex items-center justify-between pb-3 border-b border-brand-100 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-display text-sm font-bold text-brand-900">
+                  <div className="absolute -right-[72px] sm:right-0 mt-3 w-[285px] sm:w-96 bg-surface rounded-2xl sm:rounded-3xl shadow-soft-lg border border-brand-200 p-3 sm:p-4 z-50 animate-fade-in">
+                    <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-brand-100 mb-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <span className="font-display text-xs sm:text-sm font-bold text-brand-900">
                           Notifications
                         </span>
                         {unreadCount > 0 && (
-                          <span className="bg-brand-100 text-brand-800 text-xs px-2 py-0.5 rounded-full font-semibold">
+                          <span className="bg-brand-100 text-brand-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-semibold">
                             {unreadCount} new
                           </span>
                         )}
@@ -237,16 +237,16 @@ export const Navbar: React.FC = () => {
                       {unreadCount > 0 && (
                         <button
                           onClick={() => markAllAsRead()}
-                          className="text-xs font-semibold text-brand-600 hover:text-brand-900 transition-colors"
+                          className="text-[11px] sm:text-xs font-semibold text-brand-600 hover:text-brand-900 transition-colors"
                         >
                           Mark all as read
                         </button>
                       )}
                     </div>
 
-                    <div className="divide-y divide-brand-50 max-h-80 overflow-y-auto">
+                    <div className="divide-y divide-brand-50 max-h-64 sm:max-h-80 overflow-y-auto no-scrollbar-mobile">
                       {notifications.length === 0 ? (
-                        <div className="py-8 text-center text-sm text-brand-muted">
+                        <div className="py-6 sm:py-8 text-center text-xs sm:text-sm text-brand-muted">
                           No notifications yet
                         </div>
                       ) : (
@@ -268,7 +268,7 @@ export const Navbar: React.FC = () => {
                                 if (targetRoute) navigate(targetRoute);
                                 setNotifDropdownOpen(false);
                               }}
-                              className={`p-3 rounded-2xl cursor-pointer transition-colors flex items-start gap-3 my-1 ${
+                              className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl cursor-pointer transition-colors flex items-start gap-2.5 sm:gap-3 my-0.5 sm:my-1 ${
                                 !n.read ? 'bg-brand-50/80 hover:bg-brand-100/70' : 'hover:bg-zinc-50'
                               }`}
                             >
@@ -276,29 +276,29 @@ export const Navbar: React.FC = () => {
                                 <img
                                   src={n.petImage}
                                   alt=""
-                                  className="w-10 h-10 rounded-full object-cover shrink-0 border border-brand-200"
+                                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shrink-0 border border-brand-200"
                                 />
                               ) : (
-                                <div className={`w-10 h-10 rounded-full ${visual.iconBgClass} flex items-center justify-center shrink-0 ${visual.iconColorClass}`}>
-                                  <IconComponent className="w-4 h-4" />
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${visual.iconBgClass} flex items-center justify-center shrink-0 ${visual.iconColorClass}`}>
+                                  <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <p className="text-xs font-bold text-brand-900 leading-snug truncate">{n.title}</p>
-                                  <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-semibold border ${visual.badgeClass} shrink-0`}>
+                                  <p className="text-[11px] sm:text-xs font-bold text-brand-900 leading-snug truncate">{n.title}</p>
+                                  <span className={`text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded-md font-semibold border ${visual.badgeClass} shrink-0`}>
                                     {visual.badgeLabel}
                                   </span>
                                 </div>
-                                <p className="text-xs text-brand-muted mt-0.5 leading-relaxed line-clamp-2">
+                                <p className="text-[11px] sm:text-xs text-brand-muted mt-0.5 leading-relaxed line-clamp-2">
                                   {n.message}
                                 </p>
-                                <span className="text-[10px] text-brand-400 mt-1 block">
+                                <span className="text-[9px] sm:text-[10px] text-brand-400 mt-0.5 sm:mt-1 block">
                                   {n.timestamp}
                                 </span>
                               </div>
                               {!n.read && (
-                                <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0 mt-1.5" />
+                                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-brand-600 shrink-0 mt-1 sm:mt-1.5" />
                               )}
                             </div>
                           );
@@ -306,11 +306,11 @@ export const Navbar: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="pt-3 border-t border-brand-100 text-center">
+                    <div className="pt-2.5 sm:pt-3 border-t border-brand-100 text-center">
                       <Link
                         to={role === 'provider' ? '/provider/notifications' : role === 'admin' ? '/admin/requests' : '/adopter/notifications'}
                         onClick={() => setNotifDropdownOpen(false)}
-                        className="text-xs font-bold text-brand-700 hover:text-brand-900"
+                        className="text-[11px] sm:text-xs font-bold text-brand-700 hover:text-brand-900"
                       >
                         View all notifications
                       </Link>
