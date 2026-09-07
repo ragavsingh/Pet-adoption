@@ -6,6 +6,7 @@ type SyncEventType =
   | 'foster_trial_updated'
   | 'pet_status_updated'
   | 'pet_updated'
+  | 'favorite_removed'
   | 'notification_received'
   | 'user_created'
   | 'user_updated'

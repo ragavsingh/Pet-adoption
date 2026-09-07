@@ -3,11 +3,15 @@ import { favoriteService } from '../services/favoriteService';
 import { Pet } from '../types/pet';
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
+import { realtimeSync } from '../services/realtimeSync';
+import { toPetDatabaseUUID } from '../utils/petIdMapper';
 
 interface FavoritesContextValue {
   favorites: string[];
   isFavorite: (petId: string) => boolean;
   toggleFavorite: (pet: Pet) => Promise<void>;
+  removeFavorite: (petId: string) => Promise<void>;
+  refreshFavorites: () => Promise<void>;
   favoriteCount: number;
   isLoading: boolean;
 }
@@ -44,12 +48,63 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (isMounted) setIsLoading(false);
       });
 
+    // Realtime subscription: automatically drop favorite when application is approved, trial starts, or pet is adopted
+    const unsubscribe = realtimeSync.subscribe((event) => {
+      if (!isMounted || !user) return;
+      if (
+        event.type === 'favorite_removed' ||
+        event.type === 'adoption_request_updated' ||
+        event.type === 'foster_trial_updated' ||
+        event.type === 'pet_updated' ||
+        event.type === 'pet_status_updated'
+      ) {
+        if (event.type === 'favorite_removed' && event.payload?.petId) {
+          const removedId = event.payload.petId;
+          const removedUUID = toPetDatabaseUUID(removedId);
+          setFavorites((prev) => prev.filter((id) => id !== removedId && id !== removedUUID));
+        } else {
+          favoriteService
+            .getFavorites(user.id)
+            .then((fresh) => {
+              if (isMounted) setFavorites(fresh);
+            })
+            .catch(() => {});
+        }
+      }
+    });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [user?.id, isAuthenticated, authMode]);
 
-  const isFavorite = (petId: string) => favorites.includes(petId);
+  const isFavorite = (petId: string) => {
+    if (!petId) return false;
+    const targetUUID = toPetDatabaseUUID(petId);
+    return favorites.includes(petId) || favorites.includes(targetUUID);
+  };
+
+  const removeFavorite = async (petId: string) => {
+    if (!user) return;
+    const targetUUID = toPetDatabaseUUID(petId);
+    setFavorites((prev) => prev.filter((id) => id !== petId && id !== targetUUID));
+    try {
+      await favoriteService.removeFavorite(petId, user.id);
+    } catch (err) {
+      console.warn('[FavoritesContext] Error removing favorite:', err);
+    }
+  };
+
+  const refreshFavorites = async () => {
+    if (!user) return;
+    try {
+      const fresh = await favoriteService.getFavorites(user.id);
+      setFavorites(fresh);
+    } catch (err) {
+      console.warn('[FavoritesContext] Error refreshing favorites:', err);
+    }
+  };
 
   const toggleFavorite = async (pet: Pet) => {
     if (!isAuthenticated || !user) {
@@ -57,9 +112,17 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    const isCurrentlyFavorite = favorites.includes(pet.id);
+    const isCurrentlyFavorite = isFavorite(pet.id);
+
+    // Prevent saving if the pet is already in an active trial or adopted by this user
+    if (!isCurrentlyFavorite && favoriteService.isPetInTrialOrAdopted(pet.id, user.id)) {
+      showToast(`${pet.name} is already in your active trial / adoption journey! ❤️`, 'info');
+      return;
+    }
+
+    const targetUUID = toPetDatabaseUUID(pet.id);
     const updated = isCurrentlyFavorite
-      ? favorites.filter((id) => id !== pet.id)
+      ? favorites.filter((id) => id !== pet.id && id !== targetUUID)
       : [...favorites, pet.id];
 
     // Optimistic UI update for instant feedback
@@ -86,6 +149,8 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         favorites,
         isFavorite,
         toggleFavorite,
+        removeFavorite,
+        refreshFavorites,
         favoriteCount: favorites.length,
         isLoading,
       }}

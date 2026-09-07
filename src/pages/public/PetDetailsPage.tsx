@@ -147,6 +147,7 @@ export const PetDetailsPage: React.FC = () => {
 
   const favorite = isFavorite(pet.id);
   const isAdopted = pet.status === 'Adopted';
+  const isTrialAdopter = Boolean(user && activeTrial && (user.id === activeTrial.adopterId || activeTrial.adopterId?.includes(user.id)));
   const isPending =
     pet.status === 'Adoption Pending' ||
     pet.status === 'Adoption Requested' ||
@@ -212,21 +213,23 @@ export const PetDetailsPage: React.FC = () => {
             <div className="absolute top-4 left-4">
               <StatusBadge status={pet.status} size="md" />
             </div>
-            <button
-              onClick={handleFavoriteClick}
-              className={`absolute top-4 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-md backdrop-blur-md transition-all ${
-                favorite
-                  ? 'bg-white text-rose-600 scale-110'
-                  : 'bg-white/80 hover:bg-white text-brand-800 hover:text-rose-600'
-              }`}
-              aria-label="Save to favorites"
-            >
-              <Heart
-                className={`w-6 h-6 ${
-                  favorite ? 'fill-rose-600 scale-110 animate-heart-pulse' : ''
+            {!isTrialAdopter && !isAdopted && (
+              <button
+                onClick={handleFavoriteClick}
+                className={`absolute top-4 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-md backdrop-blur-md transition-all ${
+                  favorite
+                    ? 'bg-white text-rose-600 scale-110'
+                    : 'bg-white/80 hover:bg-white text-brand-800 hover:text-rose-600'
                 }`}
-              />
-            </button>
+                aria-label="Save to favorites"
+              >
+                <Heart
+                  className={`w-6 h-6 ${
+                    favorite ? 'fill-rose-600 scale-110 animate-heart-pulse' : ''
+                  }`}
+                />
+              </button>
+            )}
           </div>
 
           {/* Thumbnail Strip */}
@@ -438,14 +441,16 @@ export const PetDetailsPage: React.FC = () => {
                     </Link>
                   )}
 
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={handleFavoriteClick}
-                    leftIcon={<Heart className={`w-4 h-4 ${favorite ? 'fill-rose-600 text-rose-600' : ''}`} />}
-                  >
-                    {favorite ? 'Saved' : 'Save Pet'}
-                  </Button>
+                  {!isTrialAdopter && (
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={handleFavoriteClick}
+                      leftIcon={<Heart className={`w-4 h-4 ${favorite ? 'fill-rose-600 text-rose-600' : ''}`} />}
+                    >
+                      {favorite ? 'Saved' : 'Save Pet'}
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : isPending ? (

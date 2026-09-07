@@ -16,6 +16,7 @@ import { mapTrialFromDatabase } from './trialService';
 import { trialExtensionService } from './trialExtensionService';
 import { emailNotificationService } from './emailNotificationService';
 import { realtimeSync } from './realtimeSync';
+import { favoriteService } from './favoriteService';
 
 const STORAGE_KEY = 'pet_adoption_requests_v4';
 
@@ -1033,6 +1034,10 @@ export const adoptionService = {
         };
 
         await petService.updatePetStatus(existingReq.petId, 'Adoption Pending');
+        if (existingReq.petId && existingReq.adopterId) {
+          favoriteService.removeFavorite(existingReq.petId, existingReq.adopterId).catch(() => {});
+          realtimeSync.notifyChange('favorite_removed', existingReq.petId, { adopterId: existingReq.adopterId, petId: existingReq.petId });
+        }
       } else if (resolvedStatus === 'Rejected') {
         existingReq.status = 'Rejected';
         existingReq.reviewNotes = notes || 'Criteria not met at this time.';
@@ -1134,6 +1139,12 @@ export const adoptionService = {
 
       const updated = await this.getRequestById(requestId);
       if (!updated) throw new Error('Adoption request approved, but failed to fetch updated record.');
+
+      if (updated.petId && updated.adopterId) {
+        favoriteService.removeFavorite(updated.petId, updated.adopterId).catch(() => {});
+        realtimeSync.notifyChange('favorite_removed', updated.petId, { adopterId: updated.adopterId, petId: updated.petId });
+      }
+
       realtimeSync.notifyChange('adoption_request_updated', requestId, updated);
       return updated;
     }
@@ -1345,6 +1356,10 @@ export const adoptionService = {
       });
 
       await petService.updatePetStatus(req.petId, 'Adoption Pending');
+      if (req.petId && req.adopterId) {
+        favoriteService.removeFavorite(req.petId, req.adopterId).catch(() => {});
+        realtimeSync.notifyChange('favorite_removed', req.petId, { adopterId: req.adopterId, petId: req.petId });
+      }
     } else if (status === 'Completed') {
       req.timeline.forEach((t) => {
         t.completed = true;
@@ -1354,6 +1369,10 @@ export const adoptionService = {
       req.timeline[3].date = formattedDate;
 
       await petService.updatePetStatus(req.petId, 'Adopted');
+      if (req.petId && req.adopterId) {
+        favoriteService.removeFavorite(req.petId, req.adopterId).catch(() => {});
+        realtimeSync.notifyChange('favorite_removed', req.petId, { adopterId: req.adopterId, petId: req.petId });
+      }
 
       notificationService.addNotification({
         userId: req.adopterId,
@@ -1528,8 +1547,10 @@ export const adoptionService = {
       const petId = data?.pet_id;
       if (petId) {
         await petService.updatePetStatus(petId, 'Adopted');
+        favoriteService.removeFavorite(petId).catch(() => {});
         realtimeSync.notifyChange('pet_updated', petId);
         realtimeSync.notifyChange('pet_status_updated', petId);
+        realtimeSync.notifyChange('favorite_removed', petId);
       }
       realtimeSync.notifyChange('adoption_request_updated', targetId);
       realtimeSync.notifyChange('foster_trial_updated', targetId);

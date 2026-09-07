@@ -12,21 +12,77 @@ function getUserFavoritesKey(userId: string): string {
   return `pet_favorites_${userId}`;
 }
 
+export function getExcludedPetIdsForAdopter(userId: string): string[] {
+  if (!userId) return [];
+  const excluded: string[] = [];
+
+  try {
+    const raw = localStorage.getItem('pet_adoption_requests_v4');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((r: any) => {
+          const isUser = r.adopterId === userId || r.adopter_id === userId;
+          const status = (r.status || '').toLowerCase();
+          const isApprovedOrCompleted =
+            status === 'approved' ||
+            status === 'trial' ||
+            status === 'completed' ||
+            Boolean(r.trial);
+
+          if (isUser && isApprovedOrCompleted) {
+            if (r.petId) {
+              excluded.push(r.petId);
+              excluded.push(toPetDatabaseUUID(r.petId));
+            }
+            if (r.pet_id) {
+              excluded.push(r.pet_id);
+              excluded.push(toPetDatabaseUUID(r.pet_id));
+            }
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('[favoriteService] Failed to check adoption requests for favorites filter', e);
+  }
+
+  // Default demo state: usr_raghav already has an approved foster trial for Bruno (pet_bruno)
+  if (userId === 'usr_raghav') {
+    if (!excluded.includes('pet_bruno')) excluded.push('pet_bruno');
+    const brunoUUID = toPetDatabaseUUID('pet_bruno');
+    if (!excluded.includes(brunoUUID)) excluded.push(brunoUUID);
+  }
+
+  return excluded;
+}
+
 function loadLocalFavorites(userId: string): string[] {
   if (!userId) return [];
+  let favs: string[] = [];
   try {
     const raw = localStorage.getItem(getUserFavoritesKey(userId));
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      favs = JSON.parse(raw);
+    } else if (userId === 'usr_raghav') {
+      // Default demo favorite ONLY for the demo adopter 'usr_raghav' (Available companion with no active trial)
+      favs = ['pet_luna'];
+    }
   } catch (e) {
     console.warn('[favoriteService] Failed to load favorites from storage', e);
   }
-  // Default demo favorite ONLY for the demo adopter 'usr_raghav'
-  if (userId === 'usr_raghav') {
-    const initial = ['pet_bruno'];
-    saveLocalFavorites(userId, initial);
-    return initial;
+
+  // Automatically remove any pet where the user already has an active trial, approved request, or completed adoption
+  const excluded = getExcludedPetIdsForAdopter(userId);
+  const cleaned = favs.filter(
+    (id) => !excluded.includes(id) && !excluded.includes(toPetDatabaseUUID(id))
+  );
+
+  if (cleaned.length !== favs.length || !localStorage.getItem(getUserFavoritesKey(userId))) {
+    saveLocalFavorites(userId, cleaned);
   }
-  return [];
+
+  return cleaned;
 }
 
 function saveLocalFavorites(userId: string, favs: string[]): void {
@@ -42,6 +98,16 @@ function saveLocalFavorites(userId: string, favs: string[]): void {
 // 2. FAVORITE SERVICE (DUAL-MODE + PER-USER ISOLATION)
 // ==============================================================================
 export const favoriteService = {
+  /**
+   * Synchronously checks if a pet is already part of the user's active trial or adopted family.
+   */
+  isPetInTrialOrAdopted(petId: string, userId?: string): boolean {
+    if (!userId) return false;
+    const excluded = getExcludedPetIdsForAdopter(userId);
+    const targetPetId = toPetDatabaseUUID(petId);
+    return excluded.includes(petId) || excluded.includes(targetPetId);
+  },
+
   /**
    * Retrieves the list of favorited pet IDs for the current user.
    * If not logged in, returns empty array [].
@@ -73,7 +139,10 @@ export const favoriteService = {
           .eq('adopter_id', currentUserId);
 
         if (!error && Array.isArray(data)) {
-          return data.map((row: { pet_id: string }) => row.pet_id);
+          const excluded = getExcludedPetIdsForAdopter(currentUserId);
+          return data
+            .map((row: { pet_id: string }) => row.pet_id)
+            .filter((id: string) => !excluded.includes(id));
         }
 
         if (error) {
@@ -116,6 +185,10 @@ export const favoriteService = {
         throw new Error('Please log in to save pets to your favorites.');
       }
 
+      if (this.isPetInTrialOrAdopted(petId, currentUserId) || this.isPetInTrialOrAdopted(targetPetId, currentUserId)) {
+        throw new Error('This companion is already part of your active trial or adoption journey! ❤️');
+      }
+
       if (isUUID(targetPetId)) {
         const { error } = await (supabase as any)
           .from('favorites')
@@ -137,6 +210,10 @@ export const favoriteService = {
 
     if (!currentUserId) {
       throw new Error('Please log in to save pets to your favorites.');
+    }
+
+    if (this.isPetInTrialOrAdopted(petId, currentUserId) || this.isPetInTrialOrAdopted(targetPetId, currentUserId)) {
+      throw new Error('This companion is already part of your active trial or adoption journey! ❤️');
     }
 
     // Demo Mode: per-user storage
@@ -238,8 +315,9 @@ export const favoriteService = {
           .eq('adopter_id', currentUserId);
 
         if (!error && Array.isArray(data)) {
+          const excluded = getExcludedPetIdsForAdopter(currentUserId);
           return data
-            .filter((item: any) => item.pets !== null)
+            .filter((item: any) => item.pets !== null && !excluded.includes(item.pets.id))
             .map((item: any) => mapPetFromDatabase(item.pets));
         }
 
