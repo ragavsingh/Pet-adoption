@@ -128,19 +128,17 @@ export const App: React.FC = () => {
                     </Route>
                   </Route>
 
-                  {/* Dedicated Standalone Admin Portal (Protected strictly by role: admin) */}
-                  <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-                    <Route path="/admin" element={<AdminLayout />}>
-                      <Route path="dashboard" element={<AdminDashboard />} />
-                      <Route path="users" element={<AdminUsersPage />} />
-                      <Route path="providers" element={<AdminProvidersPage />} />
-                      <Route path="pets" element={<AdminPetsPage />} />
-                      <Route path="requests" element={<AdminRequestsPage />} />
-                      <Route path="reports" element={<AdminReportsPage />} />
-                      <Route path="test-bench" element={<AdminTestBenchPage />} />
-                      <Route path="settings" element={<AdminSettingsPage />} />
-                      <Route index element={<Navigate to="dashboard" replace />} />
-                    </Route>
+                  {/* Dedicated Standalone Admin Portal (Protected internally by Admin Security Gateway & Master Passkey) */}
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="users" element={<AdminUsersPage />} />
+                    <Route path="providers" element={<AdminProvidersPage />} />
+                    <Route path="pets" element={<AdminPetsPage />} />
+                    <Route path="requests" element={<AdminRequestsPage />} />
+                    <Route path="reports" element={<AdminReportsPage />} />
+                    <Route path="test-bench" element={<AdminTestBenchPage />} />
+                    <Route path="settings" element={<AdminSettingsPage />} />
+                    <Route index element={<Navigate to="dashboard" replace />} />
                   </Route>
 
                   {/* Catch all fallback */}

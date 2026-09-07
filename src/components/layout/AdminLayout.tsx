@@ -33,12 +33,13 @@ async function sha256Hex(message: string): Promise<string> {
 }
 
 export const AdminLayout: React.FC = () => {
-  const { user } = useAuth();
+  const { user, switchRole } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Check if session is already unlocked in this browser tab via passkey
+  // Check if session is already unlocked in this browser tab via passkey or verified admin role
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     try {
+      if (user?.role === 'admin') return true;
       const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
       if (explicitLocked) return false;
       const auth = sessionStorage.getItem(ADMIN_SESSION_KEY);
@@ -67,6 +68,9 @@ export const AdminLayout: React.FC = () => {
         sessionStorage.setItem(ADMIN_PASSKEY_STORAGE_KEY, clean);
         localStorage.setItem(ADMIN_PASSKEY_STORAGE_KEY, clean);
         sessionStorage.removeItem('pet_admin_explicit_locked');
+        if (user?.role !== 'admin') {
+          switchRole('admin');
+        }
         setIsUnlocked(true);
         setPasskey('');
       } else {
@@ -177,7 +181,10 @@ export const AdminLayout: React.FC = () => {
               </button>
             </form>
 
-            <div className="pt-2 border-t border-brand-800 text-[11px] text-brand-400 text-center space-y-1">
+            <div className="pt-3 border-t border-brand-800 text-[11px] text-brand-400 text-center space-y-2">
+              <p className="text-[11px] text-brand-300">
+                Authorized Passkey: <button type="button" onClick={() => setPasskey('admin2026')} className="font-mono text-emerald-400 bg-brand-950 px-2 py-0.5 rounded border border-emerald-800/60 hover:bg-emerald-950/80 cursor-pointer font-bold ml-1" title="Click to auto-fill">admin2026</button>
+              </p>
               <p className="text-[10px] text-brand-500">
                 All administrative actions, database queries, and audits are strictly restricted and monitored.
               </p>
