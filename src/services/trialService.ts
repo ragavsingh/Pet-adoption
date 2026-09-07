@@ -62,7 +62,17 @@ export function mapTrialFromDatabase(row: any): Trial {
       reviewedAt: top.reviewed_at,
       providerResponse: top.provider_response,
     };
+  } else if (row.status === 'extension_requested') {
+    latestExt = {
+      trialId: row.id,
+      requestedDays: 3,
+      reason: 'Adopter requested additional trial bonding time.',
+      requestedAt: row.updated_at || row.created_at || new Date().toISOString(),
+      status: 'pending',
+    };
   }
+
+  const isExtRequested = latestExt?.status === 'pending' || row.status === 'extension_requested';
 
   const baseTrial: Trial = {
     id: row.id,
@@ -74,7 +84,7 @@ export function mapTrialFromDatabase(row: any): Trial {
     endDate,
     totalDays: countdown.totalDays,
     currentDay: countdown.currentDay,
-    extensionRequested: latestExt?.status === 'pending',
+    extensionRequested: isExtRequested,
     extension: latestExt,
     notes,
   };

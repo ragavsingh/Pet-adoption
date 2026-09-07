@@ -198,9 +198,16 @@ export const AdminRequestsPage: React.FC = () => {
     setSelectedRequest(updatedReq);
   };
 
-  const pendingExtensionsCount = requests.filter(
-    (r) => r.trial?.extensionRequested || r.trial?.extension?.status === 'pending'
-  ).length;
+  const isExtensionPending = (r: AdoptionRequest) => {
+    return Boolean(
+      r.trial?.extensionRequested ||
+      r.trial?.extension?.status === 'pending' ||
+      r.trial?.status === 'Extension Requested' ||
+      (r.trial?.status as string) === 'extension_requested'
+    );
+  };
+
+  const pendingExtensionsCount = requests.filter(isExtensionPending).length;
 
   const filteredRequests = requests.filter((r) => {
     const matchesSearch =
@@ -212,7 +219,7 @@ export const AdminRequestsPage: React.FC = () => {
 
     let matchesStatus = true;
     if (statusFilter === 'extensions') {
-      matchesStatus = Boolean(r.trial?.extensionRequested || r.trial?.extension?.status === 'pending');
+      matchesStatus = isExtensionPending(r);
     } else if (statusFilter !== 'all') {
       matchesStatus = r.status.toLowerCase() === statusFilter.toLowerCase();
     }

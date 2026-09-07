@@ -94,13 +94,20 @@ export const ProviderRequestsPage: React.FC = () => {
     }
   };
 
-  const pendingExtensionsCount = requests.filter(
-    (r) => r.trial?.extensionRequested || r.trial?.extension?.status === 'pending'
-  ).length;
+  const isExtensionPending = (r: AdoptionRequest) => {
+    return Boolean(
+      r.trial?.extensionRequested ||
+      r.trial?.extension?.status === 'pending' ||
+      r.trial?.status === 'Extension Requested' ||
+      (r.trial?.status as string) === 'extension_requested'
+    );
+  };
+
+  const pendingExtensionsCount = requests.filter(isExtensionPending).length;
 
   const filteredRequests = requests.filter((r) => {
     if (tabFilter === 'extensions') {
-      return Boolean(r.trial?.extensionRequested || r.trial?.extension?.status === 'pending');
+      return isExtensionPending(r);
     }
     if (tabFilter === 'screening') {
       return r.status === 'Pending' || r.status === 'Under Review';
