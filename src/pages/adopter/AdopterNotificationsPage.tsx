@@ -68,7 +68,7 @@ export const AdopterNotificationsPage: React.FC = () => {
                   markAsRead(notif.id);
                   if (targetRoute) navigate(targetRoute);
                 }}
-                className={`w-full text-left p-5 rounded-3xl border cursor-pointer transition-all flex items-start gap-4 ${
+                className={`w-full text-left p-4 sm:p-5 rounded-2xl sm:rounded-3xl border cursor-pointer transition-all flex items-start gap-3 sm:gap-4 ${
                   !notif.read
                     ? 'bg-surface border-brand-300 shadow-card hover:bg-brand-50/50'
                     : 'bg-surface/70 border-brand-200/80 hover:bg-white text-brand-700'
@@ -78,35 +78,35 @@ export const AdopterNotificationsPage: React.FC = () => {
                   <img
                     src={notif.petImage}
                     alt=""
-                    className="w-12 h-12 rounded-2xl object-cover border border-brand-200 shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl object-cover border border-brand-200 shrink-0"
                   />
                 ) : (
-                  <div className={`w-12 h-12 rounded-2xl ${visual.iconBgClass} flex items-center justify-center ${visual.iconColorClass} shrink-0`}>
-                    <IconComponent className="w-5 h-5" />
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl ${visual.iconBgClass} flex items-center justify-center ${visual.iconColorClass} shrink-0`}>
+                    <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 )}
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-display text-sm font-bold text-brand-950">
+                  <div className="flex flex-wrap items-start sm:items-center justify-between gap-x-2 gap-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
+                      <h4 className="font-display text-xs sm:text-sm font-bold text-brand-950 leading-snug break-words">
                         {notif.title}
                       </h4>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${visual.badgeClass} shrink-0`}>
+                      <span className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-semibold border ${visual.badgeClass} shrink-0 inline-flex items-center`}>
                         {visual.badgeLabel}
                       </span>
                     </div>
-                    <span className="text-[11px] font-medium text-brand-400 shrink-0">
+                    <span className="text-[10px] sm:text-[11px] font-medium text-brand-400 shrink-0 whitespace-nowrap ml-auto sm:ml-0">
                       {notif.timestamp}
                     </span>
                   </div>
-                  <p className="text-xs text-brand-muted mt-1 leading-relaxed">
+                  <p className="text-xs text-brand-muted mt-1 leading-relaxed break-words">
                     {notif.message}
                   </p>
                 </div>
 
                 {!notif.read && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-brand-700 shrink-0 mt-2" />
+                  <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-brand-700 shrink-0 mt-1.5 sm:mt-2" />
                 )}
               </button>
             );
