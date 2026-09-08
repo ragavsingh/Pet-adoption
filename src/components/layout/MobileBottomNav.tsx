@@ -30,6 +30,9 @@ export const MobileBottomNav: React.FC = () => {
 
   if (isAuthPage) return null;
 
+  // Logically hide bottom navigation bar for guests/logged-out visitors on mobile
+  if (!isAuthenticated) return null;
+
   // Provider Navigation items on mobile
   if (role === 'provider') {
     const providerItems = [

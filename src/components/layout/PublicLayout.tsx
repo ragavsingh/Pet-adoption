@@ -4,9 +4,11 @@ import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { DemoRoleBar } from '../common/DemoRoleBar';
 import { MobileBottomNav } from './MobileBottomNav';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const PublicLayout: React.FC = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const isAuthPage = [
     '/login',
     '/signup',
@@ -15,10 +17,12 @@ export const PublicLayout: React.FC = () => {
     '/auth/callback',
   ].some((path) => location.pathname === path || location.pathname.startsWith(path + '/'));
 
+  const showMobileNav = !isAuthPage && isAuthenticated;
+
   return (
     <div
       className={`min-h-screen flex flex-col bg-surface-soft text-brand-950 font-sans ${
-        isAuthPage ? '' : 'pb-20 md:pb-0'
+        showMobileNav ? 'pb-20 md:pb-0' : ''
       }`}
     >
       <Navbar />
@@ -26,7 +30,7 @@ export const PublicLayout: React.FC = () => {
         <Outlet />
       </main>
       <Footer />
-      {!isAuthPage && <MobileBottomNav />}
+      {showMobileNav && <MobileBottomNav />}
       <DemoRoleBar />
     </div>
   );
