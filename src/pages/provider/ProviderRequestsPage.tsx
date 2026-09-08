@@ -8,6 +8,7 @@ import { calculateTrialCountdown } from '../../components/common/TrialCountdown'
 import { Button } from '../../components/common/Button';
 import { RequestReviewDrawer } from '../../components/provider/RequestReviewDrawer';
 import { useToast } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Inbox, CheckCircle2, User, Clock, ArrowRight, Sparkles } from 'lucide-react';
 
@@ -22,6 +23,7 @@ export const ProviderRequestsPage: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<AdoptionRequest | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { showToast } = useToast();
+  const confirm = useConfirm();
 
   const providerId = user?.id || 'prv_sarah';
 
@@ -82,9 +84,14 @@ export const ProviderRequestsPage: React.FC = () => {
   };
 
   const handleQuickApprove = async (req: AdoptionRequest) => {
-    if (!window.confirm(`Approve adoption application for ${req.petName} from ${req.adopterName} and start 14-day Foster-to-Own bonding trial?`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Approve Adoption & Start Trial',
+      message: `Approve adoption application for ${req.petName} from ${req.adopterName} and start 14-day Foster-to-Own bonding trial?`,
+      confirmText: 'Approve & Start Trial',
+      cancelText: 'Cancel',
+      isDestructive: false,
+    });
+    if (!confirmed) return;
     try {
       await adoptionService.approveRequest(req.id, 'Home environment pre-approved. Starting 14-day Foster-to-Own trial.');
       showToast(`Adoption approved for ${req.petName} ❤️`, 'success');

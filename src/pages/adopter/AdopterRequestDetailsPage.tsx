@@ -7,6 +7,7 @@ import { Button } from '../../components/common/Button';
 import { RequestTimeline } from '../../components/adopter/RequestTimeline';
 import { FosterTrialCard } from '../../components/adopter/FosterTrialCard';
 import { useToast } from '../../contexts/ToastContext';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import {
   ArrowLeft,
   Calendar,
@@ -29,6 +30,7 @@ import { useSmartBack } from '../../hooks/useSmartBack';
 export const AdopterRequestDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const handleBack = useSmartBack('/adopter/requests');
   const [request, setRequest] = useState<AdoptionRequest | null>(null);
@@ -53,7 +55,14 @@ export const AdopterRequestDetailsPage: React.FC = () => {
 
   const handleWithdraw = async () => {
     if (!request) return;
-    if (!window.confirm('Are you sure you want to withdraw this adoption request?')) return;
+    const confirmed = await confirm({
+      title: 'Withdraw Application',
+      message: 'Are you sure you want to withdraw this adoption request?',
+      confirmText: 'Yes, Withdraw',
+      cancelText: 'Cancel',
+      isDestructive: true,
+    });
+    if (!confirmed) return;
 
     try {
       setIsWithdrawing(true);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './contexts/ToastContext';
+import { ConfirmProvider } from './contexts/ConfirmContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import { NotificationsProvider } from './contexts/NotificationsContext';
@@ -68,7 +69,8 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollRestoration />
-      <ToastProvider>
+      <ConfirmProvider>
+        <ToastProvider>
         <AuthProvider>
           <FavoritesProvider>
             <NotificationsProvider>
@@ -149,7 +151,8 @@ export const App: React.FC = () => {
           </FavoritesProvider>
         </AuthProvider>
       </ToastProvider>
-    </BrowserRouter>
+    </ConfirmProvider>
+  </BrowserRouter>
   );
 };
 
