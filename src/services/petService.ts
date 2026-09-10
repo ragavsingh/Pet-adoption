@@ -615,9 +615,9 @@ export const petService = {
       }
 
       const refreshed = await this.getPetById(createdRow.id);
-      if (refreshed) return refreshed;
-
-      return mapPetFromDatabase(createdRow, petData.images);
+      const resultPet = refreshed || mapPetFromDatabase(createdRow, petData.images);
+      realtimeSync.notifyChange('pet_updated', resultPet.id, resultPet);
+      return resultPet;
     }
 
     // Demo Mode implementation
@@ -669,6 +669,7 @@ export const petService = {
 
     list.unshift(newPet);
     saveDemoPets(list);
+    realtimeSync.notifyChange('pet_updated', newPet.id, newPet);
     return newPet;
   },
 
@@ -805,13 +806,15 @@ export const petService = {
         console.error(`[petService] Error deleting pet ${id}:`, error);
         throw error;
       }
-      return;
     }
 
-    // Demo Mode
+    // Always synchronize local demo list and broadcast update
+    const targetUuid = toPetDatabaseUUID(id);
     let list = loadDemoPets();
-    list = list.filter((p) => p.id !== id);
+    list = list.filter((p) => p.id !== id && p.id !== targetUuid);
     saveDemoPets(list);
+
+    realtimeSync.notifyChange('pet_updated', id, { id, status: 'Unavailable' });
   },
 
   resetDemoPets(): void {

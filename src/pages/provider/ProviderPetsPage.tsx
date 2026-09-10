@@ -119,108 +119,198 @@ export const ProviderPetsPage: React.FC = () => {
           </Link>
         </div>
       ) : (
-        /* Listings Table / Cards (Section 19) */
-        <div className="bg-surface rounded-3xl border border-brand-200/80 shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-brand-50/80 border-b border-brand-200/80 text-brand-800 font-bold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-4 px-6">Pet Companion</th>
-                  <th className="py-4 px-4">Species & Breed</th>
-                  <th className="py-4 px-4">Status</th>
-                  <th className="py-4 px-4">Date Listed</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brand-100">
-                {pets.map((pet) => (
-                  <tr key={pet.id} className="hover:bg-brand-50/40 transition-colors">
-                    {/* Pet Image & Name */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={pet.images[0]}
-                          alt={pet.name}
-                          className="w-12 h-12 rounded-2xl object-cover border border-brand-200 shrink-0"
-                        />
-                        <div>
-                          <p className="font-bold text-sm text-brand-950">{pet.name}</p>
-                          <p className="text-brand-muted text-[11px]">{pet.gender} • {pet.age}</p>
-                        </div>
-                      </div>
-                    </td>
+        <div className="space-y-4">
+          {/* Mobile Card Layout (Strictly optimized for phone screens) */}
+          <div className="block md:hidden space-y-4">
+            {pets.map((pet) => (
+              <div
+                key={pet.id}
+                className="bg-surface rounded-3xl border border-brand-200/80 p-5 shadow-card space-y-4"
+              >
+                {/* Header: Photo, Name, Status */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={pet.images[0] || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400'}
+                      alt={pet.name}
+                      className="w-16 h-16 rounded-2xl object-cover border border-brand-200 shrink-0"
+                    />
+                    <div>
+                      <h3 className="font-bold text-base text-brand-950">{pet.name}</h3>
+                      <p className="text-xs font-semibold text-brand-700">{pet.breed}</p>
+                      <p className="text-[11px] text-brand-muted">
+                        {pet.species} • {pet.gender} • {pet.age}
+                      </p>
+                    </div>
+                  </div>
+                  <StatusBadge status={pet.status} size="sm" />
+                </div>
 
-                    {/* Species & Breed */}
-                    <td className="py-4 px-4 font-semibold text-brand-800">
-                      {pet.breed}
-                      <span className="block text-[11px] text-brand-400 font-normal">
-                        {pet.species} ({pet.size})
-                      </span>
-                    </td>
+                {/* Meta info */}
+                <div className="flex items-center justify-between text-[11px] text-brand-muted pt-1 border-t border-brand-100">
+                  <span>Listed on {new Date(pet.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <span className="font-medium text-brand-700">{pet.size}</span>
+                </div>
 
-                    {/* Status */}
-                    <td className="py-4 px-4">
-                      <StatusBadge status={pet.status} size="sm" />
-                    </td>
+                {/* Action Buttons for Mobile Phone */}
+                <div className="grid grid-cols-4 gap-2 pt-1">
+                  <Link
+                    to={`/pets/${pet.id}`}
+                    className="flex flex-col items-center justify-center py-2 px-1 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-800 text-[10px] font-bold border border-brand-200/60 transition-colors"
+                    title="View Public Profile"
+                  >
+                    <Eye className="w-4 h-4 mb-0.5 text-brand-700" />
+                    <span>View</span>
+                  </Link>
 
-                    {/* Date */}
-                    <td className="py-4 px-4 text-brand-muted font-medium">
-                      {new Date(pet.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </td>
+                  <Link
+                    to={`/provider/pets/${pet.id}/edit`}
+                    className="flex flex-col items-center justify-center py-2 px-1 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-800 text-[10px] font-bold border border-brand-200/60 transition-colors"
+                    title="Edit Listing"
+                  >
+                    <Edit2 className="w-4 h-4 mb-0.5 text-brand-700" />
+                    <span>Edit</span>
+                  </Link>
 
-                    {/* Actions (View, Edit, Pause/Resume, Delete) */}
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link
-                          to={`/pets/${pet.id}`}
-                          className="p-2 rounded-xl text-brand-700 hover:bg-brand-100 transition-colors"
-                          title="View Public Profile"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
+                  {pet.status === 'Available' ? (
+                    <button
+                      type="button"
+                      onClick={() => openConfirmModal(pet, 'pause')}
+                      className="flex flex-col items-center justify-center py-2 px-1 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200/60 transition-colors"
+                      title="Pause Listing"
+                    >
+                      <PauseCircle className="w-4 h-4 mb-0.5 text-amber-700" />
+                      <span>Pause</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openConfirmModal(pet, 'resume')}
+                      className="flex flex-col items-center justify-center py-2 px-1 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200/60 transition-colors"
+                      title="Resume Listing"
+                    >
+                      <PlayCircle className="w-4 h-4 mb-0.5 text-emerald-700" />
+                      <span>Resume</span>
+                    </button>
+                  )}
 
-                        <Link
-                          to={`/provider/pets/${pet.id}/edit`}
-                          className="p-2 rounded-xl text-brand-700 hover:bg-brand-100 transition-colors"
-                          title="Edit Listing"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Link>
+                  <button
+                    type="button"
+                    onClick={() => openConfirmModal(pet, 'delete')}
+                    className="flex flex-col items-center justify-center py-2 px-1 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold border border-rose-200/80 transition-colors"
+                    title="Delete Listing"
+                  >
+                    <Trash2 className="w-4 h-4 mb-0.5 text-rose-600" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-                        {pet.status === 'Available' ? (
-                          <button
-                            type="button"
-                            onClick={() => openConfirmModal(pet, 'pause')}
-                            className="p-2 rounded-xl text-amber-700 hover:bg-amber-50 transition-colors"
-                            title="Pause Listing"
-                          >
-                            <PauseCircle className="w-4 h-4" />
-                          </button>
-                        ) : pet.status === 'Paused' ? (
-                          <button
-                            type="button"
-                            onClick={() => openConfirmModal(pet, 'resume')}
-                            className="p-2 rounded-xl text-emerald-700 hover:bg-emerald-50 transition-colors"
-                            title="Resume Listing"
-                          >
-                            <PlayCircle className="w-4 h-4" />
-                          </button>
-                        ) : null}
-
-                        <button
-                          type="button"
-                          onClick={() => openConfirmModal(pet, 'delete')}
-                          className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"
-                          title="Delete Listing"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+          {/* Desktop Table View (Hidden on mobile phones) */}
+          <div className="hidden md:block bg-surface rounded-3xl border border-brand-200/80 shadow-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-brand-50/80 border-b border-brand-200/80 text-brand-800 font-bold uppercase tracking-wider text-[11px]">
+                  <tr>
+                    <th className="py-4 px-6">Pet Companion</th>
+                    <th className="py-4 px-4">Species & Breed</th>
+                    <th className="py-4 px-4">Status</th>
+                    <th className="py-4 px-4">Date Listed</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-brand-100">
+                  {pets.map((pet) => (
+                    <tr key={pet.id} className="hover:bg-brand-50/40 transition-colors">
+                      {/* Pet Image & Name */}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={pet.images[0] || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400'}
+                            alt={pet.name}
+                            className="w-12 h-12 rounded-2xl object-cover border border-brand-200 shrink-0"
+                          />
+                          <div>
+                            <p className="font-bold text-sm text-brand-950">{pet.name}</p>
+                            <p className="text-brand-muted text-[11px]">{pet.gender} • {pet.age}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Species & Breed */}
+                      <td className="py-4 px-4 font-semibold text-brand-800">
+                        {pet.breed}
+                        <span className="block text-[11px] text-brand-400 font-normal">
+                          {pet.species} ({pet.size})
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-4 px-4">
+                        <StatusBadge status={pet.status} size="sm" />
+                      </td>
+
+                      {/* Date */}
+                      <td className="py-4 px-4 text-brand-muted font-medium">
+                        {new Date(pet.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            to={`/pets/${pet.id}`}
+                            className="p-2 rounded-xl text-brand-700 hover:bg-brand-100 transition-colors"
+                            title="View Public Profile"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+
+                          <Link
+                            to={`/provider/pets/${pet.id}/edit`}
+                            className="p-2 rounded-xl text-brand-700 hover:bg-brand-100 transition-colors"
+                            title="Edit Listing"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Link>
+
+                          {pet.status === 'Available' ? (
+                            <button
+                              type="button"
+                              onClick={() => openConfirmModal(pet, 'pause')}
+                              className="p-2 rounded-xl text-amber-700 hover:bg-amber-50 transition-colors"
+                              title="Pause Listing"
+                            >
+                              <PauseCircle className="w-4 h-4" />
+                            </button>
+                          ) : pet.status === 'Paused' ? (
+                            <button
+                              type="button"
+                              onClick={() => openConfirmModal(pet, 'resume')}
+                              className="p-2 rounded-xl text-emerald-700 hover:bg-emerald-50 transition-colors"
+                              title="Resume Listing"
+                            >
+                              <PlayCircle className="w-4 h-4" />
+                            </button>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => openConfirmModal(pet, 'delete')}
+                            className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Delete Listing"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -245,7 +335,7 @@ export const ProviderPetsPage: React.FC = () => {
             {actionType === 'resume' &&
               `Resuming will make ${selectedPet?.name} immediately visible again to prospective adopters.`}
             {actionType === 'delete' &&
-              `Are you sure you want to delete ${selectedPet?.name}'s listing? This simulated action removes it from your local demo listings.`}
+              `Are you sure you want to permanently delete ${selectedPet?.name}'s listing? This will remove the companion from public adoption discovery and your listed pets.`}
           </p>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-brand-100">
@@ -257,7 +347,7 @@ export const ProviderPetsPage: React.FC = () => {
               size="sm"
               onClick={handleConfirmAction}
             >
-              Confirm {actionType ? actionType.toUpperCase() : ''}
+              {actionType === 'delete' ? 'Delete Listing' : `Confirm ${actionType ? actionType.toUpperCase() : ''}`}
             </Button>
           </div>
         </div>

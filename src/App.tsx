@@ -119,9 +119,13 @@ export const App: React.FC = () => {
                     <Route path="/provider" element={<ProviderLayout />}>
                       <Route path="dashboard" element={<ProviderDashboard />} />
                       <Route path="pets" element={<ProviderPetsPage />} />
+                      <Route path="pets/new" element={<AddPetPage />} />
+                      <Route path="pets/add" element={<AddPetPage />} />
+                      <Route path="pets/:id/edit" element={<EditPetPage />} />
                       <Route path="add-pet" element={<AddPetPage />} />
                       <Route path="edit-pet/:id" element={<EditPetPage />} />
                       <Route path="requests" element={<ProviderRequestsPage />} />
+                      <Route path="requests/:id" element={<ProviderRequestsPage />} />
                       <Route path="adoptions" element={<ProviderAdoptionsPage />} />
                       <Route path="profile" element={<ProviderProfilePage />} />
                       <Route path="notifications" element={<ProviderNotificationsPage />} />
