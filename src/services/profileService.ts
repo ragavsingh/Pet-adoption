@@ -2,7 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User, UserRole, AdopterProfile, ProviderProfile } from '../types/user';
 import { DEMO_ADOPTER, DEMO_PROVIDER } from '../data/mockData';
 import { Database } from '../lib/database.types';
-import { resolveUserAvatar } from '../utils/avatarUtils';
+import { resolveUserAvatar, isDummyPlaceholderPhoto } from '../utils/avatarUtils';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 type AdopterProfileRow = Database['public']['Tables']['adopter_profiles']['Row'];
@@ -158,18 +158,30 @@ export const profileService = {
       // Logically resolve best name and avatar
       const name = extractBestName(profile?.full_name, authUser);
       const email = profile?.email || authUser?.email || '';
-      const rawAvatar = profile?.profile_image_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture;
+      
+      // Google OAuth avatar sources
+      const googleAvatar =
+        authUser?.user_metadata?.avatar_url ||
+        authUser?.user_metadata?.picture ||
+        authUser?.identities?.[0]?.identity_data?.avatar_url ||
+        authUser?.identities?.[0]?.identity_data?.picture;
+
+      // Discard any unwanted placeholder/dummy stranger photos in database
+      const validDbAvatar = (profile?.profile_image_url && !isDummyPlaceholderPhoto(profile.profile_image_url))
+        ? profile.profile_image_url
+        : null;
+
+      const chosenAvatar = validDbAvatar || googleAvatar;
       const avatar = resolveUserAvatar({
-        avatar: rawAvatar,
+        avatar: chosenAvatar,
         name,
         email,
       });
 
-      // If database has a placeholder name or missing avatar, but we resolved a better name/avatar from OAuth,
-      // sync the database row immediately in the background so it is permanently updated in Supabase!
+      // If database has a placeholder name, missing avatar, or a dummy photo, sync real Google/resolved avatar immediately
       if (
         isSupabaseConfigured() &&
-        (isPlaceholderName(profile?.full_name) || !profile?.profile_image_url) &&
+        (isPlaceholderName(profile?.full_name) || !profile?.profile_image_url || isDummyPlaceholderPhoto(profile?.profile_image_url)) &&
         name &&
         !isPlaceholderName(name)
       ) {
@@ -177,7 +189,7 @@ export const profileService = {
           .from('profiles')
           .update({
             full_name: name,
-            profile_image_url: profile?.profile_image_url || rawAvatar || null,
+            profile_image_url: avatar,
           })
           .eq('id', userId)
           .then(() => {})
@@ -261,13 +273,16 @@ export const profileService = {
           };
         } else {
           userObject.providerProfile = {
-            ...DEMO_PROVIDER,
             id: userId,
             name,
             email,
             phone: profile?.phone || '',
             location: formatLocation(profile?.city, profile?.locality),
             avatar,
+            organizationName: undefined,
+            about: '',
+            activeListingsCount: 0,
+            successfulAdoptionsCount: 0,
             verified: false,
           };
         }
@@ -346,14 +361,19 @@ export const profileService = {
       const { city, locality } = parseLocation(updates.location);
 
       // 1. Update base user profile
+      const baseUpdatePayload: any = {
+        full_name: updates.name,
+        phone: updates.phone,
+        city,
+        locality,
+      };
+      if (updates.avatar !== undefined) {
+        baseUpdatePayload.profile_image_url = updates.avatar;
+      }
+
       const { error: baseError } = await (supabase as any)
         .from('profiles')
-        .update({
-          full_name: updates.name,
-          phone: updates.phone,
-          city,
-          locality,
-        })
+        .update(baseUpdatePayload)
         .eq('id', userId);
 
       if (baseError) {

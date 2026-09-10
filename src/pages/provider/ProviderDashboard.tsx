@@ -46,7 +46,7 @@ export const ProviderDashboard: React.FC = () => {
 
   const activeListingsCount = providerPets.filter((p) => p.status === 'Available').length;
   const pendingRequestsCount = requests.filter((r) => r.status === 'Pending' || r.status === 'Under Review').length;
-  const successfulAdoptionsCount = user?.providerProfile?.successfulAdoptionsCount ?? 38; // Default to career adoptions
+  const successfulAdoptionsCount = user?.providerProfile?.successfulAdoptionsCount ?? (user?.id === 'prv_sarah' ? 38 : 0);
 
   return (
     <div className="space-y-8 text-left">
@@ -58,7 +58,7 @@ export const ProviderDashboard: React.FC = () => {
             <span>{user?.providerProfile?.verified ? 'Verified Pet Provider & Rescue Foster' : 'Pet Provider & Rescue Foster'}</span>
           </div>
           <h2 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight">
-            Good evening, {user?.name ? user.name.split(' ')[0] : 'Sarah'} 👋
+            Good evening, {user?.name ? user.name.split(' ')[0] : 'there'} 👋
           </h2>
           <p className="text-xs sm:text-sm text-brand-200 max-w-lg leading-relaxed">
             {pendingRequestsCount > 0

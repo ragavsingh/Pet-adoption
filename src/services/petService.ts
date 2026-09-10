@@ -38,6 +38,7 @@ function saveDemoPets(pets: Pet[]): void {
 // ==============================================================================
 import { isRealMode, isUUID } from '../utils/authMode';
 import { toPetDatabaseUUID } from '../utils/petIdMapper';
+import { resolveUserAvatar } from '../utils/avatarUtils';
 export { isUUID };
 
 function normalizeStatus(dbStatus: string): PetStatus {
@@ -134,7 +135,11 @@ export function mapPetFromDatabase(
       ? `${joinedProfile.locality ? `${joinedProfile.locality}, ` : ''}${joinedProfile.city}`
       : (joinedProvider?.city || 'Mumbai'),
     verified: joinedProvider?.verification_status === 'verified',
-    avatar: joinedProfile?.profile_image_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400',
+    avatar: resolveUserAvatar({
+      avatar: joinedProfile?.profile_image_url,
+      name: joinedProfile?.full_name || joinedProvider?.organization_name || 'Pet Care Provider',
+      email: joinedProfile?.email,
+    }),
     about: joinedProvider?.description || joinedProfile?.bio || 'Dedicated rescue foster caregiver.',
     phone: joinedProfile?.phone || undefined,
   };
@@ -654,13 +659,16 @@ export const petService = {
         specialCare: 'Regular routine.',
         dailyRoutine: 'Morning and evening walks with midday rest.',
       },
-      provider: petData.provider || {
+      provider: petData.provider ? {
+        ...petData.provider,
+        avatar: resolveUserAvatar(petData.provider),
+      } : {
         id: 'prv_sarah',
         name: "Sarah D'Souza",
         title: 'Verified Pet Provider',
         location: 'Mumbai',
         verified: true,
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400',
+        avatar: resolveUserAvatar({ name: "Sarah D'Souza", email: "sarah@example.com" }),
         about: 'Certified rescue foster caregiver.',
       },
       status: petData.status || 'Available',
@@ -815,6 +823,44 @@ export const petService = {
     saveDemoPets(list);
 
     realtimeSync.notifyChange('pet_updated', id, { id, status: 'Unavailable' });
+  },
+
+  /**
+   * Synchronously updates the provider information across all locally stored / demo pets
+   * belonging to a given provider ID.
+   */
+  syncProviderMetadataInPets(
+    providerId: string,
+    updates: { name?: string; avatar?: string; location?: string; organizationName?: string; about?: string }
+  ): void {
+    try {
+      const list = loadDemoPets();
+      let changed = false;
+      const updatedList = list.map((pet) => {
+        if (pet.provider.id === providerId) {
+          changed = true;
+          return {
+            ...pet,
+            provider: {
+              ...pet.provider,
+              ...(updates.name ? { name: updates.name } : {}),
+              ...(updates.avatar ? { avatar: updates.avatar } : {}),
+              ...(updates.location ? { location: updates.location } : {}),
+              ...(updates.organizationName ? { title: updates.organizationName } : {}),
+              ...(updates.about ? { about: updates.about } : {}),
+            },
+          };
+        }
+        return pet;
+      });
+
+      if (changed) {
+        saveDemoPets(updatedList);
+        realtimeSync.notifyChange('pet_updated', 'provider_sync', null);
+      }
+    } catch (e) {
+      console.warn('[petService] syncProviderMetadataInPets failed', e);
+    }
   },
 
   resetDemoPets(): void {

@@ -111,7 +111,7 @@ const PLATFORM_INDIAN_USERS: AdminUserRecord[] = [
     location: 'Hauz Khas, New Delhi',
     status: 'Verified Adopter',
     joined: 'Jul 2026',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400',
+    avatarUrl: resolveUserAvatar({ name: 'Ananya Sharma', email: 'ananya.sharma@outlook.in' }),
     createdAt: '2026-07-15T09:30:00Z',
   },
   {

@@ -439,11 +439,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProviderProfile = async (updates: Partial<ProviderProfile>) => {
-    if (!user || !user.providerProfile) return;
-    const updated = { ...user.providerProfile, ...updates };
+    if (!user) return;
+    const baseProvider: ProviderProfile = user.providerProfile || {
+      id: user.id,
+      name: user.name,
+      organizationName: undefined,
+      email: user.email,
+      phone: '',
+      location: '',
+      avatar: user.avatar,
+      verified: false,
+      about: '',
+      activeListingsCount: 0,
+      successfulAdoptionsCount: 0,
+    };
+    const updated = { ...baseProvider, ...updates };
     setUser({
       ...user,
-      name: updated.name,
+      name: updated.name || user.name,
       avatar: updated.avatar || user.avatar,
       providerProfile: updated,
     });

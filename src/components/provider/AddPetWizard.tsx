@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { petService } from '../../services/petService';
 import { petImageService } from '../../services/petImageService';
 import { useNavigate } from 'react-router-dom';
+import { resolveUserAvatar } from '../../utils/avatarUtils';
 import {
   Check,
   ChevronLeft,
@@ -251,13 +252,18 @@ export const AddPetWizard: React.FC = () => {
   // Provider profile constructor to link listing directly to authenticated provider
   const getProviderPayload = () => {
     if (!user) return undefined;
+    const providerAvatar = resolveUserAvatar({
+      avatar: user.providerProfile?.avatar || user.avatar,
+      name: user.name || user.providerProfile?.name,
+      email: user.email,
+    });
     return {
       id: user.id,
-      name: user.name || 'Pet Provider',
+      name: user.name || user.providerProfile?.name || 'Pet Provider',
       title: user.providerProfile?.organizationName || 'Verified Pet Provider',
       location: user.providerProfile?.location || location || 'Mumbai',
       verified: user.providerProfile?.verified ?? true,
-      avatar: user.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400',
+      avatar: providerAvatar,
       about: user.providerProfile?.about || 'Dedicated pet foster caregiver and rescue provider.',
     };
   };

@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from '../../components/common/Modal';
 import { AdoptionRequestModal } from '../../components/adopter/AdoptionRequestModal';
 import { ReportModal } from '../../components/common/ReportModal';
+import { UserAvatar } from '../../components/common/UserAvatar';
 import {
   Heart,
   MapPin,
@@ -664,10 +665,16 @@ export const PetDetailsPage: React.FC = () => {
       {/* Provider Profile Card (Section 11) */}
       <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-brand-200/80 shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <img
+          <UserAvatar
+            user={{
+              name: pet.provider.name,
+              avatar: (user && user.id === pet.provider.id) ? (user.providerProfile?.avatar || user.avatar) : pet.provider.avatar,
+            }}
             src={pet.provider.avatar}
+            name={pet.provider.name}
+            size="xl"
+            className="w-16 h-16 rounded-full border-2 border-brand-300 shrink-0 object-cover"
             alt={pet.provider.name}
-            className="w-16 h-16 rounded-full object-cover border-2 border-brand-300 shrink-0"
           />
           <div className="space-y-1">
             <div className="flex items-center gap-2">

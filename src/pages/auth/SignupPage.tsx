@@ -58,6 +58,9 @@ export const SignupPage: React.FC = () => {
     setErrorMessage(null);
     setLoading(true);
     try {
+      if (roleSelection) {
+        sessionStorage.setItem('pet_oauth_intended_role', roleSelection);
+      }
       const res = await realLoginWithGoogle();
       if (res?.error) {
         setLoading(false);

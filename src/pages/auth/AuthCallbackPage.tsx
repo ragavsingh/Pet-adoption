@@ -77,10 +77,29 @@ export const AuthCallbackPage: React.FC = () => {
 
     async function processSessionAndRedirect(authUser: any) {
       try {
+        const intendedRole = sessionStorage.getItem('pet_oauth_intended_role');
+        sessionStorage.removeItem('pet_oauth_intended_role');
+
         // Load or create user profile from database
-        const profile = await profileService.loadUserProfile(authUser.id, authUser);
-        const role = profile?.role || 'adopter';
-        const bestName = profile?.name || 'Adopter';
+        let profile = await profileService.loadUserProfile(authUser.id, authUser);
+        let role = profile?.role || 'adopter';
+
+        // If the user specifically signed up as a provider and their DB role is not admin
+        if (intendedRole === 'provider' && role !== 'admin' && role !== 'provider') {
+          try {
+            await (supabase as any)
+              .from('profiles')
+              .update({ role: 'provider' })
+              .eq('id', authUser.id);
+            role = 'provider';
+            // Reload updated profile
+            profile = await profileService.loadUserProfile(authUser.id, authUser);
+          } catch (updateErr) {
+            console.warn('Could not update role to provider:', updateErr);
+          }
+        }
+
+        const bestName = profile?.name || (role === 'provider' ? 'Pet Provider' : 'Adopter');
         const firstName = bestName.split(' ')[0] || 'there';
 
         // Record user for real-time admin overview
