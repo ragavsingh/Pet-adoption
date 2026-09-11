@@ -217,7 +217,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
       : null;
 
   const hasPendingExtension = Boolean(
-    trial?.extensionRequested || trial?.extension?.status === 'pending'
+    !isCompleted && (trial?.extensionRequested || trial?.extension?.status === 'pending')
   );
   const pendingDays = trial?.extension?.requestedDays || 7;
   const pendingReason =
@@ -1558,7 +1558,7 @@ export const AdminRequestReviewDrawer: React.FC<AdminRequestReviewDrawerProps> =
                     <div className="flex items-center justify-between font-bold text-brand-900">
                       <span>Requested: +{trial.extension.requestedDays} Days</span>
                       <span className="capitalize font-semibold text-brand-600">
-                        Status: {trial.extension.status}
+                        Status: {isCompleted && trial.extension.status === 'pending' ? 'Resolved (Adoption Finalized)' : trial.extension.status}
                       </span>
                     </div>
                     {trial.extension.reason && (

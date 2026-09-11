@@ -102,6 +102,9 @@ export const ProviderRequestsPage: React.FC = () => {
   };
 
   const isExtensionPending = (r: AdoptionRequest) => {
+    if (r.status === 'Completed' || r.trial?.status === 'Adoption Completed') {
+      return false;
+    }
     return Boolean(
       r.trial?.extensionRequested ||
       r.trial?.extension?.status === 'pending' ||
@@ -273,7 +276,7 @@ export const ProviderRequestsPage: React.FC = () => {
                         Day {calculateTrialCountdown(req.trial.startDate, req.trial.endDate).currentDay} of {req.trial.totalDays} ({calculateTrialCountdown(req.trial.startDate, req.trial.endDate).daysRemaining}d left)
                       </span>
                     )}
-                    {req.trial?.extensionRequested && req.trial.extension?.status === 'pending' && (
+                    {req.status !== 'Completed' && req.trial?.extensionRequested && req.trial.extension?.status === 'pending' && (
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse flex items-center gap-1">
                         <Clock className="w-3 h-3 text-amber-700" />
                         <span>Extension Requested (+{req.trial.extension.requestedDays}d)</span>

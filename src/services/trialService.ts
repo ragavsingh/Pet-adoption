@@ -72,7 +72,13 @@ export function mapTrialFromDatabase(row: any): Trial {
     };
   }
 
-  const isExtRequested = latestExt?.status === 'pending' || row.status === 'extension_requested';
+  const isCompleted = row.status === 'completed';
+  if (isCompleted && latestExt && latestExt.status === 'pending') {
+    latestExt.status = 'approved';
+    latestExt.providerResponse = 'Adoption completed officially early by adopter.';
+  }
+
+  const isExtRequested = !isCompleted && (latestExt?.status === 'pending' || row.status === 'extension_requested');
 
   const baseTrial: Trial = {
     id: row.id,
@@ -89,7 +95,7 @@ export function mapTrialFromDatabase(row: any): Trial {
     notes,
   };
 
-  baseTrial.status = deriveTrialStatus(baseTrial, countdown);
+  baseTrial.status = isCompleted ? 'Adoption Completed' : deriveTrialStatus(baseTrial, countdown);
   return baseTrial;
 }
 

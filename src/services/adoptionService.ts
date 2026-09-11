@@ -190,6 +190,16 @@ export function mapAdoptionRequestFromDatabase(row: any): AdoptionRequest {
     };
   }
 
+  // If request is officially completed, guarantee trial reflects completion and resolves pending extensions
+  if (status === 'Completed' && trial) {
+    trial.status = 'Adoption Completed';
+    trial.extensionRequested = false;
+    if (trial.extension && trial.extension.status === 'pending') {
+      trial.extension.status = 'approved';
+      trial.extension.providerResponse = 'Adoption officially finalized.';
+    }
+  }
+
   // Verification reconstruction - strictly enforces consistency with status
   let verification: AdoptionVerification =
     row.verification ||
@@ -339,8 +349,24 @@ function loadRequests(): AdoptionRequest[] {
             r.createdAt,
             r.updatedAt
           );
+          let trial = r.trial;
+          if (status === 'Completed' && trial) {
+            trial = {
+              ...trial,
+              status: 'Adoption Completed',
+              extensionRequested: false,
+              extension: trial.extension
+                ? {
+                    ...trial.extension,
+                    status: trial.extension.status === 'pending' ? 'approved' : trial.extension.status,
+                    providerResponse: trial.extension.providerResponse || 'Adoption officially finalized.',
+                  }
+                : undefined,
+            };
+          }
           return {
             ...r,
+            trial,
             timeline,
             verification,
           };
@@ -1592,6 +1618,21 @@ export const adoptionService = {
         realtimeSync.notifyChange('pet_status_updated', petId);
         realtimeSync.notifyChange('favorite_removed', petId);
       }
+      // Guarantee trial extension requests in database are marked resolved
+      if (isSupabaseConfigured() && isUUID(targetId)) {
+        try {
+          await (supabase as any)
+            .from('trial_extension_requests')
+            .update({
+              status: 'rejected',
+              provider_notes: 'Adoption completed officially early by foster parent.',
+              resolved_at: new Date().toISOString(),
+            })
+            .eq('trial_id', targetId)
+            .eq('status', 'pending');
+        } catch (_) {}
+      }
+
       realtimeSync.notifyChange('adoption_request_updated', targetId);
       realtimeSync.notifyChange('foster_trial_updated', targetId);
       realtimeSync.notifyChange('notification_received');
@@ -1605,6 +1646,11 @@ export const adoptionService = {
       req.status = 'Completed';
       if (req.trial) {
         req.trial.status = 'Adoption Completed';
+        req.trial.extensionRequested = false;
+        if (req.trial.extension && req.trial.extension.status === 'pending') {
+          req.trial.extension.status = 'approved';
+          req.trial.extension.providerResponse = 'Adoption officially finalized.';
+        }
       }
       if (req.petId) {
         await petService.updatePetStatus(req.petId, 'Adopted');

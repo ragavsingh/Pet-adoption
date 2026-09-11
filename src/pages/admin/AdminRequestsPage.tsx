@@ -199,6 +199,9 @@ export const AdminRequestsPage: React.FC = () => {
   };
 
   const isExtensionPending = (r: AdoptionRequest) => {
+    if (r.status === 'Completed' || r.trial?.status === 'Adoption Completed') {
+      return false;
+    }
     return Boolean(
       r.trial?.extensionRequested ||
       r.trial?.extension?.status === 'pending' ||
@@ -404,7 +407,7 @@ export const AdminRequestsPage: React.FC = () => {
                         <StatusBadge status={r.status} size="sm" />
                         {r.trial && (r.status === 'Approved' || r.status === 'Completed') && (
                           <div className="mt-1">
-                            {r.trial.extensionRequested ? (
+                            {r.status !== 'Completed' && r.trial.extensionRequested ? (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 inline-flex items-center gap-1">
                                 <Clock className="w-2.5 h-2.5 text-amber-700" />
                                 <span>+{r.trial.extension?.requestedDays || 7}d Ext Pending</span>

@@ -92,7 +92,7 @@ export const AdminDashboard: React.FC = () => {
       sub: 'Completed & certified',
       icon: Award,
       color: 'bg-rose-50 text-rose-700 group-hover:bg-rose-100',
-      link: '/admin/requests?status=approved',
+      link: '/admin/requests?status=completed',
     },
     {
       label: 'Pending Providers',

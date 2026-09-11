@@ -215,7 +215,7 @@ export const RequestReviewDrawer: React.FC<RequestReviewDrawerProps> = ({
                 )}
 
                 {/* Prominent Extension Request Banner if pending */}
-                {request.trial.extensionRequested && request.trial.extension?.status === 'pending' && (
+                {request.status !== 'Completed' && request.trial.extensionRequested && request.trial.extension?.status === 'pending' && (
                   <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-left space-y-3 animate-fade-in">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
