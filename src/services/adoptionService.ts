@@ -1595,26 +1595,53 @@ export const adoptionService = {
       realtimeSync.notifyChange('adoption_request_updated', targetId);
       realtimeSync.notifyChange('foster_trial_updated', targetId);
       realtimeSync.notifyChange('notification_received');
+      realtimeSync.notifyChange('all');
       return;
     }
 
-    await this.updateRequestStatus(id, 'Completed');
     const all = loadRequests();
     const req = all.find((r) => r.id === id || r.trial?.id === id);
     if (req) {
+      req.status = 'Completed';
       if (req.trial) {
         req.trial.status = 'Adoption Completed';
       }
       if (req.petId) {
         await petService.updatePetStatus(req.petId, 'Adopted');
+        favoriteService.removeFavorite(req.petId).catch(() => {});
         realtimeSync.notifyChange('pet_updated', req.petId);
         realtimeSync.notifyChange('pet_status_updated', req.petId);
+        realtimeSync.notifyChange('favorite_removed', req.petId);
       }
+      if (Array.isArray(req.timeline)) {
+        req.timeline = req.timeline.map((step) => {
+          if (step.step === 4 || step.status === 'Completed') {
+            return {
+              ...step,
+              completed: true,
+              current: true,
+              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              description: 'Official adoption finalized and certificate issued.',
+            };
+          }
+          return { ...step, current: false };
+        });
+      }
+      // Cancel competing requests for this same pet in demo mode (aligns with DB RPC)
+      all.forEach((other) => {
+        if (other.id !== req.id && other.petId === req.petId) {
+          if (other.status === 'Pending' || other.status === 'Under Review' || other.status === 'Approved') {
+            other.status = 'Cancelled';
+            other.reviewNotes = (other.reviewNotes ? other.reviewNotes + ' ' : '') + '[System: Pet was officially adopted by foster parent.]';
+          }
+        }
+      });
       saveRequests(all);
     }
     realtimeSync.notifyChange('adoption_request_updated', id);
     realtimeSync.notifyChange('foster_trial_updated', id);
     realtimeSync.notifyChange('notification_received');
+    realtimeSync.notifyChange('all');
   },
 };
 

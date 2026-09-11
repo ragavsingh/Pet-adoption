@@ -122,8 +122,10 @@ export const ProviderRequestsPage: React.FC = () => {
     if (tabFilter === 'trials') {
       return r.status === 'Approved' && Boolean(r.trial);
     }
-    return true;
+    return r.status !== 'Completed' && r.trial?.status !== 'Adoption Completed';
   });
+
+  const activeRequestsCount = requests.filter((r) => r.status !== 'Completed' && r.trial?.status !== 'Adoption Completed').length;
 
   return (
     <div className="space-y-6 text-left">
@@ -150,7 +152,7 @@ export const ProviderRequestsPage: React.FC = () => {
                 : 'text-brand-600 hover:text-brand-900'
             }`}
           >
-            All ({requests.length})
+            All Active ({activeRequestsCount})
           </button>
           <button
             onClick={() => setTabFilter('screening')}

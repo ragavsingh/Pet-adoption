@@ -24,10 +24,15 @@ import {
   UserCheck,
 } from 'lucide-react';
 
+import { adoptionCompletionService } from '../../services/adoptionCompletionService';
+
 export const AdopterDashboard: React.FC = () => {
   const { user } = useAuth();
   const { favoriteCount, favorites } = useFavorites();
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
+  const [completedAdoptionsCount, setCompletedAdoptionsCount] = useState(0);
+  const [adoptedPetIds, setAdoptedPetIds] = useState<Set<string>>(new Set());
+  const [adoptedPetNames, setAdoptedPetNames] = useState<Set<string>>(new Set());
   const [savedPets, setSavedPets] = useState<Pet[]>([]);
   const [recommendedPets, setRecommendedPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,8 +49,32 @@ export const AdopterDashboard: React.FC = () => {
     }
 
     setLoading(true);
-    const reqs = await adoptionService.getRequestsForUser(user.id, 'adopter');
+    const [reqs, realAdps] = await Promise.all([
+      adoptionService.getRequestsForUser(user.id, 'adopter'),
+      adoptionCompletionService.getCompletedAdoptions(user.id, 'adopter').catch(() => []),
+    ]);
+
+    const petIds = new Set<string>();
+    const petNames = new Set<string>();
+    realAdps.forEach((a) => {
+      if (a.petId) petIds.add(a.petId);
+      if (a.petName) petNames.add(a.petName.trim().toLowerCase());
+    });
+    reqs.forEach((r) => {
+      if (
+        r.status === 'Completed' ||
+        r.trial?.status === 'Adoption Completed' ||
+        Boolean(r.adoption?.certificateNumber)
+      ) {
+        if (r.petId) petIds.add(r.petId);
+        if (r.petName) petNames.add(r.petName.trim().toLowerCase());
+      }
+    });
+
+    setAdoptedPetIds(petIds);
+    setAdoptedPetNames(petNames);
     setRequests(reqs);
+    setCompletedAdoptionsCount(Math.max(reqs.filter((r) => r.status === 'Completed').length, petIds.size));
 
     const allPets = await petService.getAllPets();
     const favPets = allPets.filter((p) => favorites.includes(p.id));
@@ -57,11 +86,19 @@ export const AdopterDashboard: React.FC = () => {
     setLoading(false);
   };
 
-  const pendingCount = requests.filter((r) => r.status === 'Pending' || r.status === 'Under Review').length;
-  const approvedCount = requests.filter((r) => r.status === 'Approved').length;
-  const completedCount = requests.filter((r) => r.status === 'Completed').length;
+  const isPetAdopted = (r: AdoptionRequest) => {
+    if (r.status === 'Completed' || r.trial?.status === 'Adoption Completed') return true;
+    if (r.petId && adoptedPetIds.has(r.petId)) return true;
+    if (r.petName && adoptedPetNames.has(r.petName.trim().toLowerCase())) return true;
+    return false;
+  };
 
-  const activeTrialRequest = requests.find((r) => r.status === 'Approved' && r.trial);
+  const activeRequests = requests.filter((r) => !isPetAdopted(r));
+  const pendingCount = activeRequests.filter((r) => r.status === 'Pending' || r.status === 'Under Review').length;
+  const approvedCount = activeRequests.filter((r) => r.status === 'Approved').length;
+  const completedCount = completedAdoptionsCount;
+
+  const activeTrialRequest = activeRequests.find((r) => r.status === 'Approved' && r.trial);
 
   const profileCompletion = user?.adopterProfile?.profileCompletion || 80;
 
@@ -230,22 +267,26 @@ export const AdopterDashboard: React.FC = () => {
               Recent Adoption Applications
             </h3>
             <Link to="/adopter/requests" className="text-xs font-bold text-brand-700 hover:text-brand-950">
-              View All ({requests.length}) →
+              View All ({activeRequests.length}) →
             </Link>
           </div>
 
           <div className="space-y-3">
-            {requests.length === 0 ? (
+            {activeRequests.length === 0 ? (
               <div className="p-8 rounded-3xl bg-surface border border-brand-200 text-center space-y-3">
-                <p className="text-xs text-brand-muted">No adoption requests sent yet.</p>
-                <Link to="/pets">
+                <p className="text-xs text-brand-muted">
+                  {completedAdoptionsCount > 0
+                    ? 'All applications have been successfully finalized and officially adopted!'
+                    : 'No active adoption requests sent yet.'}
+                </p>
+                <Link to={completedAdoptionsCount > 0 ? '/adopter/adoptions' : '/pets'}>
                   <Button variant="primary" size="sm">
-                    Discover Pets to Adopt
+                    {completedAdoptionsCount > 0 ? 'View My Official Adoptions' : 'Discover Pets to Adopt'}
                   </Button>
                 </Link>
               </div>
             ) : (
-              requests.slice(0, 3).map((req) => (
+              activeRequests.slice(0, 3).map((req) => (
                 <div
                   key={req.id}
                   className="p-4 rounded-3xl bg-surface border border-brand-200/80 shadow-card hover:shadow-card-hover transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"

@@ -25,8 +25,13 @@ export const AdopterAdoptionsPage: React.FC = () => {
       adoptionService.getRequestsForUser(user.id, 'adopter'),
       adoptionCompletionService.getCompletedAdoptions(user.id, 'adopter'),
     ]).then(([reqs, realAdps]) => {
-      // Check if user has any active Foster-to-Own trials
-      const activeTrials = reqs.filter((r) => r.status === 'Approved');
+      // Collect completed pet IDs to prevent false active trial alerts
+      const completedPetIds = new Set<string>();
+      realAdps.forEach((a) => { if (a.petId) completedPetIds.add(a.petId); });
+      reqs.filter((r) => r.status === 'Completed').forEach((r) => { if (r.petId) completedPetIds.add(r.petId); });
+
+      // Check if user has any active Foster-to-Own trials for pets not yet adopted
+      const activeTrials = reqs.filter((r) => r.status === 'Approved' && (!r.petId || !completedPetIds.has(r.petId)));
       setHasActiveTrials(activeTrials.length > 0);
 
       // Strictly include only completed adoptions (exclude pets on active trial)
