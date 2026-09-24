@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Sparkles, User, Home, Shield, ChevronUp, ChevronDown, Check, X, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 export const DemoRoleBar: React.FC = () => {
   const { role, switchRole, logout, user } = useAuth();
@@ -41,7 +42,7 @@ export const DemoRoleBar: React.FC = () => {
     switchRole(newRole);
     if (newRole === 'adopter') navigate('/adopter/dashboard');
     else if (newRole === 'provider') navigate('/provider/dashboard');
-    else if (newRole === 'admin') navigate('/admin/dashboard');
+    else if (newRole === 'admin') navigate(getAdminPath('dashboard'));
   };
 
   return (

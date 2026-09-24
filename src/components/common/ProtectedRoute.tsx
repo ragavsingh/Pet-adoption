@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserRole } from '../../types/user';
 import { Logo } from './Logo';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 interface ProtectedRouteProps {
   allowedRoles: UserRole[];
@@ -37,7 +38,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
     // Graceful redirection to the user's authorized home portal
     if (role === 'adopter') return <Navigate to="/adopter/dashboard" replace />;
     if (role === 'provider') return <Navigate to="/provider/dashboard" replace />;
-    if (role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+    if (role === 'admin') return <Navigate to={getAdminPath('dashboard')} replace />;
     return <Navigate to="/" replace />;
   }
 

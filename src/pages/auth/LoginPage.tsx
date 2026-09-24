@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { recordRegisteredUser } from '../../services/adminService';
+import { getAdminPath } from '../../utils/adminSecurity';
 import {
   Lock,
   Mail,
@@ -71,7 +72,7 @@ export const LoginPage: React.FC = () => {
     if (isAuthenticated && user) {
       if (user.role === 'adopter') navigate('/adopter/dashboard', { replace: true });
       else if (user.role === 'provider') navigate('/provider/dashboard', { replace: true });
-      else if (user.role === 'admin') navigate('/admin/dashboard', { replace: true });
+      else if (user.role === 'admin') navigate(getAdminPath('dashboard'), { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -117,7 +118,7 @@ export const LoginPage: React.FC = () => {
         showToast(`Welcome back! Logged in as ${res.role.toUpperCase()}`, 'success');
         if (res.role === 'adopter') navigate('/adopter/dashboard');
         else if (res.role === 'provider') navigate('/provider/dashboard');
-        else if (res.role === 'admin') navigate('/admin/dashboard');
+        else if (res.role === 'admin') navigate(getAdminPath('dashboard'));
         else navigate('/');
       } else {
         const err = res.error || 'Invalid email or password. Please check your credentials and try again.';
@@ -211,7 +212,7 @@ export const LoginPage: React.FC = () => {
         showToast(`Welcome back! Logged in as ${res.role.toUpperCase()}`, 'success');
         if (res.role === 'adopter') navigate('/adopter/dashboard');
         else if (res.role === 'provider') navigate('/provider/dashboard');
-        else if (res.role === 'admin') navigate('/admin/dashboard');
+        else if (res.role === 'admin') navigate(getAdminPath('dashboard'));
         else navigate('/');
       } else {
         const err = res.error || 'Invalid or expired verification code.';

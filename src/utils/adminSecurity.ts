@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Platform Administrator Authorization & Security Utilities
  *
  * Designates authorized platform administrator emails and provides
@@ -7,6 +7,21 @@
  */
 
 export const PRIMARY_ADMIN_EMAIL = 'raghavsingh6204@gmail.com';
+
+/**
+ * Obfuscated administrative base path.
+ * Unpredictable URL routing preventing automated brute-force discovery or dictionary scanning.
+ */
+export const ADMIN_BASE_PATH = '/portal-sec-ops-7491';
+
+/**
+ * Generates an unpredictable admin route path for subpaths (e.g., 'dashboard', 'requests').
+ */
+export function getAdminPath(subpath: string = ''): string {
+  if (!subpath) return ADMIN_BASE_PATH;
+  const clean = subpath.startsWith('/') ? subpath : `/${subpath}`;
+  return `${ADMIN_BASE_PATH}${clean}`;
+}
 
 export const AUTHORIZED_ADMIN_EMAILS: readonly string[] = Object.freeze([
   'raghavsingh6204@gmail.com',

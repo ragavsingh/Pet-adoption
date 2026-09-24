@@ -7,6 +7,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { Heart, Home, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { recordRegisteredUser } from '../../services/adminService';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 const GoogleIcon: React.FC = () => (
   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -50,7 +51,7 @@ export const SignupPage: React.FC = () => {
     if (isAuthenticated && user) {
       if (user.role === 'adopter') navigate('/adopter/dashboard', { replace: true });
       else if (user.role === 'provider') navigate('/provider/dashboard', { replace: true });
-      else if (user.role === 'admin') navigate('/admin/dashboard', { replace: true });
+      else if (user.role === 'admin') navigate(getAdminPath('dashboard'), { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 

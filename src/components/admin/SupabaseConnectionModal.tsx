@@ -17,6 +17,7 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { Button } from '../common/Button';
 import { useToast } from '../../contexts/ToastContext';
 import { Link } from 'react-router-dom';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 interface SupabaseConnectionModalProps {
   isOpen: boolean;
@@ -238,7 +239,7 @@ export const SupabaseConnectionModal: React.FC<SupabaseConnectionModalProps> = (
           </button>
 
           <div className="flex items-center gap-2">
-            <Link to="/admin/test-bench" onClick={onClose}>
+            <Link to={getAdminPath('test-bench')} onClick={onClose}>
               <Button variant="outline" size="sm" className="text-xs">
                 Test Bench
               </Button>

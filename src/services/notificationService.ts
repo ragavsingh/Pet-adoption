@@ -3,6 +3,7 @@ import { INITIAL_NOTIFICATIONS } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { isRealMode, isUUID } from '../utils/authMode';
 import { formatRelativeTime } from '../utils/formatTime';
+import { getAdminPath } from '../utils/adminSecurity';
 
 // ==============================================================================
 // 1. HELPER UTILITIES (PER-USER NOTIFICATION ISOLATION)
@@ -71,7 +72,7 @@ export const notificationService = {
             message: row.message,
             timestamp: formatRelativeTime(row.created_at),
             read: Boolean(row.is_read),
-            link: row.action_url || '/admin/requests',
+            link: row.action_url || getAdminPath('requests'),
             petName: row.pet_name,
             petImage: row.pet_image,
             relatedEntityType: row.related_entity_type,

@@ -60,6 +60,7 @@ import { AdminRequestsPage } from './pages/admin/AdminRequestsPage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminTestBenchPage } from './pages/admin/AdminTestBenchPage';
+import { ADMIN_BASE_PATH } from './utils/adminSecurity';
 
 // Success / Certificate Page
 import { AdoptionSuccessPage } from './pages/AdoptionSuccessPage';
@@ -134,8 +135,12 @@ export const App: React.FC = () => {
                     </Route>
                   </Route>
 
+                  {/* Decoy Protection: Neutralize any automated scans or direct attempts to /admin */}
+                  <Route path="/admin/*" element={<Navigate to="/" replace />} />
+                  <Route path="/admin" element={<Navigate to="/" replace />} />
+
                   {/* Dedicated Standalone Admin Portal (Protected internally by Admin Security Gateway & Master Passkey) */}
-                  <Route path="/admin" element={<AdminLayout />}>
+                  <Route path={ADMIN_BASE_PATH} element={<AdminLayout />}>
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="users" element={<AdminUsersPage />} />
                     <Route path="providers" element={<AdminProvidersPage />} />

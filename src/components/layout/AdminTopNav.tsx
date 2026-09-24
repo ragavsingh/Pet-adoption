@@ -23,6 +23,7 @@ import { notificationService } from '../../services/notificationService';
 import { AppNotification } from '../../types/notification';
 import { realtimeSync } from '../../services/realtimeSync';
 import { SupabaseConnectionModal } from '../admin/SupabaseConnectionModal';
+import { getAdminPath, ADMIN_BASE_PATH } from '../../utils/adminSecurity';
 
 interface AdminTopNavProps {
   onOpenMobile: () => void;
@@ -47,14 +48,14 @@ export const AdminTopNav: React.FC<AdminTopNavProps> = ({
 
   const getPageTitle = () => {
     const p = location.pathname;
-    if (p.includes('/admin/dashboard')) return 'Executive Telemetry Dashboard';
-    if (p.includes('/admin/requests')) return 'Adoption Requests & Step-Wise Verification';
-    if (p.includes('/admin/users')) return 'Registered Users & Access Roles';
-    if (p.includes('/admin/providers')) return 'Rescue Provider Network & Audits';
-    if (p.includes('/admin/pets')) return 'Companion Pet Listings & Safety Moderation';
-    if (p.includes('/admin/reports')) return 'Welfare & Safety Compliance Reports';
-    if (p.includes('/admin/test-bench')) return 'Live System Test Bench & Diagnostics';
-    if (p.includes('/admin/settings')) return 'Platform Governance & Storage Configuration';
+    if (p.includes('/dashboard')) return 'Executive Telemetry Dashboard';
+    if (p.includes('/requests')) return 'Adoption Requests & Step-Wise Verification';
+    if (p.includes('/users')) return 'Registered Users & Access Roles';
+    if (p.includes('/providers')) return 'Rescue Provider Network & Audits';
+    if (p.includes('/pets')) return 'Companion Pet Listings & Safety Moderation';
+    if (p.includes('/reports')) return 'Welfare & Safety Compliance Reports';
+    if (p.includes('/test-bench')) return 'Live System Test Bench & Diagnostics';
+    if (p.includes('/settings')) return 'Platform Governance & Storage Configuration';
     return 'Platform Administration';
   };
 
@@ -153,15 +154,15 @@ export const AdminTopNav: React.FC<AdminTopNavProps> = ({
 
     // 4. Route accurately based on entity type or action_url
     if (n.relatedEntityType === 'report' || n.type === 'report_created') {
-      navigate('/admin/reports');
+      navigate(getAdminPath('reports'));
     } else if (n.relatedEntityType === 'provider_profile' || n.type === 'provider_verified') {
-      navigate('/admin/providers');
+      navigate(getAdminPath('providers'));
     } else if (targetRequestId) {
-      navigate(`/admin/requests?id=${targetRequestId}`);
+      navigate(`${getAdminPath('requests')}?id=${targetRequestId}`);
     } else if (n.link) {
       navigate(n.link);
     } else {
-      navigate('/admin/requests');
+      navigate(getAdminPath('requests'));
     }
   };
 
@@ -204,7 +205,7 @@ export const AdminTopNav: React.FC<AdminTopNavProps> = ({
               <span>Admin Console</span>
               <span>/</span>
               <span className="text-brand-700 font-semibold">
-                {location.pathname.replace('/admin/', '') || 'dashboard'}
+                {location.pathname.replace(ADMIN_BASE_PATH, '').replace(/^\//, '') || 'dashboard'}
               </span>
             </div>
             <h1 className="font-display text-sm sm:text-base font-bold text-brand-950 truncate">
@@ -231,7 +232,7 @@ export const AdminTopNav: React.FC<AdminTopNavProps> = ({
 
           {/* Live Test Bench Quick Button */}
           <Link
-            to="/admin/test-bench"
+            to={getAdminPath('test-bench')}
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-900 text-white hover:bg-brand-800 text-xs font-bold transition-all shadow-xs"
             title="Run system tests and diagnostics"
           >
@@ -353,7 +354,7 @@ export const AdminTopNav: React.FC<AdminTopNavProps> = ({
                     type="button"
                     onClick={() => {
                       setNotifDropdownOpen(false);
-                      navigate('/admin/requests');
+                      navigate(getAdminPath('requests'));
                     }}
                     className="text-xs font-bold text-brand-700 hover:text-brand-950 transition-colors cursor-pointer block w-full py-1"
                   >

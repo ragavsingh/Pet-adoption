@@ -8,7 +8,7 @@ import { UserAvatar } from '../common/UserAvatar';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { getNotificationConfig, resolveNotificationRoute } from '../../utils/notificationConfig';
-import { isAuthorizedAdmin } from '../../utils/adminSecurity';
+import { isAuthorizedAdmin, getAdminPath } from '../../utils/adminSecurity';
 import {
   Heart,
   Bell,
@@ -114,7 +114,7 @@ export const Navbar: React.FC = () => {
 
   const getDashboardLink = () => {
     if (role === 'provider') return '/provider/dashboard';
-    if (role === 'admin') return '/admin/dashboard';
+    if (role === 'admin') return getAdminPath('dashboard');
     return '/adopter/dashboard';
   };
 
@@ -283,7 +283,7 @@ export const Navbar: React.FC = () => {
 
                     <div className="pt-2.5 sm:pt-3 border-t border-brand-100 text-center">
                       <Link
-                        to={role === 'provider' ? '/provider/notifications' : role === 'admin' ? '/admin/requests' : '/adopter/notifications'}
+                        to={role === 'provider' ? '/provider/notifications' : role === 'admin' ? getAdminPath('requests') : '/adopter/notifications'}
                         onClick={() => setNotifDropdownOpen(false)}
                         className="text-[11px] sm:text-xs font-bold text-brand-700 hover:text-brand-900"
                       >
@@ -378,7 +378,7 @@ export const Navbar: React.FC = () => {
 
                     {isAuthorizedAdmin(user) && (
                       <Link
-                        to="/admin/dashboard"
+                        to={getAdminPath('dashboard')}
                         onClick={() => setUserDropdownOpen(false)}
                         className="flex items-center gap-2 px-3 py-2 rounded-2xl hover:bg-brand-50 text-brand-800 font-semibold transition-colors"
                       >
@@ -579,7 +579,7 @@ export const Navbar: React.FC = () => {
                   </Link>
 
                   <Link
-                    to={role === 'provider' ? '/provider/notifications' : role === 'admin' ? '/admin/requests' : '/adopter/notifications'}
+                    to={role === 'provider' ? '/provider/notifications' : role === 'admin' ? getAdminPath('requests') : '/adopter/notifications'}
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-brand-200/70 text-xs font-bold text-brand-800 hover:bg-brand-50 transition-colors shadow-xs"
                   >
@@ -598,7 +598,7 @@ export const Navbar: React.FC = () => {
 
                   {isAuthorizedAdmin(user) && (
                     <Link
-                      to="/admin/dashboard"
+                      to={getAdminPath('dashboard')}
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs font-bold text-emerald-900 hover:bg-emerald-100/60 transition-colors shadow-xs"
                     >

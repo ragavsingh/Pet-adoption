@@ -13,6 +13,7 @@ import {
   Info,
 } from 'lucide-react';
 import { NotificationType } from '../types/notification';
+import { getAdminPath } from './adminSecurity';
 
 export interface NotificationVisualConfig {
   icon: React.ComponentType<{ className?: string }>;
@@ -161,7 +162,7 @@ export const NOTIFICATION_TYPE_CONFIG: Record<NotificationType, NotificationVisu
     iconBgClass: 'bg-amber-100',
     iconColorClass: 'text-amber-700',
     badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
-    getDefaultRoute: () => '/admin/reports',
+    getDefaultRoute: () => getAdminPath('reports'),
   },
   system: {
     icon: Info,
@@ -205,9 +206,9 @@ export function resolveNotificationRoute(
   // 1. Platform Admin role
   if (role === 'admin') {
     if (notif.relatedEntityId) {
-      return `/admin/requests?id=${notif.relatedEntityId}`;
+      return `${getAdminPath('requests')}?id=${notif.relatedEntityId}`;
     }
-    return '/admin/requests';
+    return getAdminPath('requests');
   }
 
   // 2. Foster trial or adoption request -> directly open the full application / trial details page!

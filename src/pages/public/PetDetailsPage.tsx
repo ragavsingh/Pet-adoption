@@ -9,7 +9,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { TrialCountdown } from '../../components/common/TrialCountdown';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { isAuthorizedAdmin } from '../../utils/adminSecurity';
+import { isAuthorizedAdmin, getAdminPath } from '../../utils/adminSecurity';
 import { Modal } from '../../components/common/Modal';
 import { AdoptionRequestModal } from '../../components/adopter/AdoptionRequestModal';
 import { ReportModal } from '../../components/common/ReportModal';
@@ -421,7 +421,7 @@ export const PetDetailsPage: React.FC = () => {
                       </Button>
                     </Link>
                   ) : isAuthorizedAdmin(user) ? (
-                    <Link to="/admin/requests" className="flex-1">
+                    <Link to={getAdminPath('requests')} className="flex-1">
                       <Button
                         variant="primary"
                         size="md"

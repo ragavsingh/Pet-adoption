@@ -6,6 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
 import { Mail, ArrowLeft, CheckCircle2, AlertCircle, KeyRound, RefreshCw, Lock, Eye, EyeOff } from 'lucide-react';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 export const ForgotPasswordPage: React.FC = () => {
   const [mode, setMode] = useState<'link' | 'code'>('link');
@@ -161,7 +162,7 @@ export const ForgotPasswordPage: React.FC = () => {
       setLoading(false);
       if (res.role === 'adopter') navigate('/adopter/dashboard');
       else if (res.role === 'provider') navigate('/provider/dashboard');
-      else if (res.role === 'admin') navigate('/admin/dashboard');
+      else if (res.role === 'admin') navigate(getAdminPath('dashboard'));
       else navigate('/');
     } catch (err: any) {
       setLoading(false);

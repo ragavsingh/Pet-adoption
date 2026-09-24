@@ -5,6 +5,7 @@ import { profileService } from '../../services/profileService';
 import { useToast } from '../../contexts/ToastContext';
 import { Logo } from '../../components/common/Logo';
 import { recordRegisteredUser } from '../../services/adminService';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 export const AuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
@@ -117,7 +118,7 @@ export const AuthCallbackPage: React.FC = () => {
         if (role === 'provider') {
           navigate('/provider/dashboard', { replace: true });
         } else if (role === 'admin') {
-          navigate('/admin/dashboard', { replace: true });
+          navigate(getAdminPath('dashboard'), { replace: true });
         } else {
           // Default role for Google users is adopter
           navigate('/adopter/dashboard', { replace: true });

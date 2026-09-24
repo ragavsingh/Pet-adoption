@@ -5,6 +5,7 @@ import { Settings, ShieldCheck, Database, RefreshCw, Server, Lock, Mail } from '
 import { petService } from '../../services/petService';
 import { adminService } from '../../services/adminService';
 import { isSupabaseConfigured } from '../../lib/supabase';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 export const AdminSettingsPage: React.FC = () => {
   const { showToast } = useToast();
@@ -105,7 +106,7 @@ export const AdminSettingsPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => window.location.href = '/admin/test-bench'}
+            onClick={() => window.location.href = getAdminPath('test-bench')}
             leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
           >
             Launch System Test Bench

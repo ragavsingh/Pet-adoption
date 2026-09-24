@@ -15,6 +15,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { adminService, AdminDashboardStats } from '../../services/adminService';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
@@ -44,7 +45,7 @@ export const AdminDashboard: React.FC = () => {
       sub: 'Registered accounts',
       icon: Users,
       color: 'bg-blue-50 text-blue-700 group-hover:bg-blue-100',
-      link: '/admin/users',
+      link: getAdminPath('users'),
     },
     {
       label: 'Adopters',
@@ -52,7 +53,7 @@ export const AdminDashboard: React.FC = () => {
       sub: 'Verified adopters',
       icon: UserCheck,
       color: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100',
-      link: '/admin/users?role=adopter',
+      link: `${getAdminPath('users')}?role=adopter`,
     },
     {
       label: 'Providers / Rescues',
@@ -60,7 +61,7 @@ export const AdminDashboard: React.FC = () => {
       sub: `${stats?.verifiedProviders ?? 0} audited shelters`,
       icon: ShieldCheck,
       color: 'bg-purple-50 text-purple-700 group-hover:bg-purple-100',
-      link: '/admin/providers',
+      link: getAdminPath('providers'),
     },
     {
       label: 'Total Pets Listed',
@@ -68,7 +69,7 @@ export const AdminDashboard: React.FC = () => {
       sub: 'All-time active companion listings',
       icon: Dog,
       color: 'bg-amber-50 text-amber-700 group-hover:bg-amber-100',
-      link: '/admin/pets',
+      link: getAdminPath('pets'),
     },
     {
       label: 'Available Pets',
@@ -76,7 +77,7 @@ export const AdminDashboard: React.FC = () => {
       sub: 'Ready for trial',
       icon: CheckCircle2,
       color: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100',
-      link: '/admin/pets?status=available',
+      link: `${getAdminPath('pets')}?status=available`,
     },
     {
       label: 'Adoption Requests',
@@ -84,7 +85,7 @@ export const AdminDashboard: React.FC = () => {
       sub: `${stats?.pendingRequests ?? 0} pending review`,
       icon: Inbox,
       color: 'bg-indigo-50 text-indigo-700 group-hover:bg-indigo-100',
-      link: '/admin/requests',
+      link: getAdminPath('requests'),
     },
     {
       label: 'Successful Adoptions',
@@ -92,7 +93,7 @@ export const AdminDashboard: React.FC = () => {
       sub: 'Completed & certified',
       icon: Award,
       color: 'bg-rose-50 text-rose-700 group-hover:bg-rose-100',
-      link: '/admin/requests?status=completed',
+      link: `${getAdminPath('requests')}?status=completed`,
     },
     {
       label: 'Pending Providers',
@@ -100,7 +101,7 @@ export const AdminDashboard: React.FC = () => {
       sub: 'Awaiting audit',
       icon: Clock,
       color: 'bg-amber-50 text-amber-700 group-hover:bg-amber-100',
-      link: '/admin/providers?status=pending',
+      link: `${getAdminPath('providers')}?status=pending`,
     },
     {
       label: 'Welfare Reports',
@@ -108,7 +109,7 @@ export const AdminDashboard: React.FC = () => {
       sub: `${stats?.pendingReports ?? 0} active reports`,
       icon: AlertOctagon,
       color: 'bg-red-50 text-red-700 group-hover:bg-red-100',
-      link: '/admin/reports',
+      link: getAdminPath('reports'),
     },
   ];
 
@@ -231,7 +232,7 @@ export const AdminDashboard: React.FC = () => {
                 </span>
               </div>
               <Link
-                to="/admin/providers"
+                to={getAdminPath('providers')}
                 className="text-[10px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-full transition-colors"
               >
                 Review Providers
@@ -246,7 +247,7 @@ export const AdminDashboard: React.FC = () => {
                 </span>
               </div>
               <Link
-                to="/admin/requests"
+                to={getAdminPath('requests')}
                 className="text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-full transition-colors"
               >
                 Inspect Trials
@@ -261,7 +262,7 @@ export const AdminDashboard: React.FC = () => {
                 </span>
               </div>
               <Link
-                to="/admin/reports"
+                to={getAdminPath('reports')}
                 className="text-[10px] font-bold text-rose-800 bg-rose-100 hover:bg-rose-200 px-2 py-0.5 rounded-full transition-colors"
               >
                 Inspect Reports

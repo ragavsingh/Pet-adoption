@@ -17,6 +17,7 @@ import {
 import { adminService } from '../../services/adminService';
 import { SupabaseConnectionModal } from '../admin/SupabaseConnectionModal';
 import { useAuth } from '../../contexts/AuthContext';
+import { getAdminPath } from '../../utils/adminSecurity';
 
 interface AdminSidebarProps {
   isOpenMobile?: boolean;
@@ -36,52 +37,52 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const navItems = [
     {
       name: 'Executive Dashboard',
-      path: '/admin/dashboard',
+      path: getAdminPath('dashboard'),
       icon: LayoutDashboard,
       badge: null,
     },
     {
       name: 'Adoption Requests',
-      path: '/admin/requests',
+      path: getAdminPath('requests'),
       icon: Inbox,
       badge: 'Verify',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
     },
     {
       name: 'Users & Accounts',
-      path: '/admin/users',
+      path: getAdminPath('users'),
       icon: Users,
       badge: null,
     },
     {
       name: 'Rescue Providers',
-      path: '/admin/providers',
+      path: getAdminPath('providers'),
       icon: ShieldCheck,
       badge: 'Audits',
       badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
     },
     {
       name: 'Companion Pet Listings',
-      path: '/admin/pets',
+      path: getAdminPath('pets'),
       icon: Dog,
       badge: null,
     },
     {
       name: 'Welfare & Safety Reports',
-      path: '/admin/reports',
+      path: getAdminPath('reports'),
       icon: AlertOctagon,
       badge: null,
     },
     {
       name: 'Live System Test Bench',
-      path: '/admin/test-bench',
+      path: getAdminPath('test-bench'),
       icon: Activity,
       badge: 'Live Test',
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
     },
     {
       name: 'Settings & Telemetry',
-      path: '/admin/settings',
+      path: getAdminPath('settings'),
       icon: Settings,
       badge: null,
     },
@@ -91,7 +92,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <div className="flex flex-col h-full bg-brand-950 text-brand-100 border-r border-brand-800/80 w-72 select-none">
       {/* Brand Header */}
       <div className="p-5 border-b border-brand-800/80 flex items-center justify-between">
-        <Link to="/admin/dashboard" className="flex items-center gap-3 group">
+        <Link to={getAdminPath('dashboard')} className="flex items-center gap-3 group">
           <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform shadow-inner">
             <ShieldCheck className="w-5 h-5" />
           </div>

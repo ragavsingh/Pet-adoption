@@ -17,6 +17,7 @@ import { trialExtensionService } from './trialExtensionService';
 import { emailNotificationService } from './emailNotificationService';
 import { realtimeSync } from './realtimeSync';
 import { favoriteService } from './favoriteService';
+import { getAdminPath } from '../utils/adminSecurity';
 
 const STORAGE_KEY = 'pet_adoption_requests_v4';
 
@@ -785,7 +786,7 @@ export const adoptionService = {
           type: 'request_received',
           title: `New Adoption Request: ${finalResult.petName}`,
           message: `${finalResult.adopterName} submitted an adoption application for ${finalResult.petName}. Review details and verify steps.`,
-          link: '/admin/requests',
+          link: getAdminPath('requests'),
           petName: finalResult.petName,
           petImage: finalResult.petImage,
         });
@@ -868,7 +869,7 @@ export const adoptionService = {
       type: 'request_received',
       title: `New Adoption Request: ${data.petName}`,
       message: `${data.adopterName} submitted an adoption application for ${data.petName}. Review details and verify steps.`,
-      link: '/admin/requests',
+      link: getAdminPath('requests'),
       petName: data.petName,
       petImage: data.petImage,
     });
@@ -1169,7 +1170,7 @@ export const adoptionService = {
         type: 'request_approved',
         title: `Adoption Approved: ${updatedReq.petName}`,
         message: `You approved the adoption application for ${updatedReq.petName} submitted by ${updatedReq.adopterName}.`,
-        link: '/admin/requests',
+        link: getAdminPath('requests'),
         petName: updatedReq.petName,
         petImage: updatedReq.petImage,
       });
@@ -1506,7 +1507,7 @@ export const adoptionService = {
         type: 'request_received',
         title: 'Trial Extension Requested',
         message: `${req.adopterName} requested a ${additionalDays}-day trial extension for ${req.petName}. Review and approve in Admin Portal.`,
-        link: '/admin/requests',
+        link: getAdminPath('requests'),
         petName: req.petName,
         petImage: req.petImage,
       });
@@ -1558,7 +1559,7 @@ export const adoptionService = {
           type: 'request_approved',
           title: 'Trial Extension Approved',
           message: `Trial extension (+${extDays} days) approved for ${req.petName}. New end date: ${req.trial.endDate}.`,
-          link: '/admin/requests',
+          link: getAdminPath('requests'),
           petName: req.petName,
           petImage: req.petImage,
         });
@@ -1584,7 +1585,7 @@ export const adoptionService = {
           type: 'request_rejected',
           title: 'Trial Extension Declined',
           message: `Trial extension request for ${req.petName} was declined.`,
-          link: '/admin/requests',
+          link: getAdminPath('requests'),
           petName: req.petName,
           petImage: req.petImage,
         });
