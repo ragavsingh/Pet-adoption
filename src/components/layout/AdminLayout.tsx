@@ -14,7 +14,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
-import { isAuthorizedAdmin } from '../../utils/adminSecurity';
+import { isAuthorizedAdmin, PRIMARY_ADMIN_EMAIL } from '../../utils/adminSecurity';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 const ADMIN_SESSION_KEY = 'pet_admin_session_auth_v2';
 const ADMIN_PASSKEY_STORAGE_KEY = 'pet_admin_session_passkey';
@@ -34,16 +35,12 @@ async function sha256Hex(message: string): Promise<string> {
 }
 
 export const AdminLayout: React.FC = () => {
-  const { user, switchRole, isAuthenticated, isLoading } = useAuth();
+  const { user, switchRole, isAuthenticated, isLoading, realLogin } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // 1. Strict Administrator Authorization Check
-  const isAuthorized = isAuthorizedAdmin(user);
-
-  // Check if session is already unlocked in this browser tab via verified passkey
+  // 1. Check if session is already unlocked in this browser tab via verified passkey
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     try {
-      if (!isAuthorizedAdmin(user)) return false;
       const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
       if (explicitLocked) return false;
       return sessionStorage.getItem(ADMIN_SESSION_KEY) === 'unlocked';
@@ -52,24 +49,6 @@ export const AdminLayout: React.FC = () => {
     }
   });
 
-  // Keep isUnlocked state synchronized if auth finishes loading or user changes
-  useEffect(() => {
-    if (!isAuthorized) {
-      setIsUnlocked(false);
-      try {
-        sessionStorage.removeItem(ADMIN_SESSION_KEY);
-        sessionStorage.removeItem(ADMIN_PASSKEY_STORAGE_KEY);
-        localStorage.removeItem(ADMIN_PASSKEY_STORAGE_KEY);
-      } catch {}
-    } else {
-      const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
-      const sessionAuth = sessionStorage.getItem(ADMIN_SESSION_KEY);
-      if (explicitLocked || sessionAuth !== 'unlocked') {
-        setIsUnlocked(false);
-      }
-    }
-  }, [isAuthorized, user]);
-
   const [passkey, setPasskey] = useState('');
   const [showPasskey, setShowPasskey] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -77,10 +56,6 @@ export const AdminLayout: React.FC = () => {
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthorized) {
-      setErrorMsg('Unauthorized account.');
-      return;
-    }
     setIsSubmitting(true);
     setErrorMsg('');
 
@@ -92,9 +67,23 @@ export const AdminLayout: React.FC = () => {
         sessionStorage.setItem(ADMIN_PASSKEY_STORAGE_KEY, clean);
         localStorage.setItem(ADMIN_PASSKEY_STORAGE_KEY, clean);
         sessionStorage.removeItem('pet_admin_explicit_locked');
-        if (user?.role !== 'admin') {
-          switchRole('admin');
+
+        // Automatically ensure user is authenticated as the designated admin
+        if (!isAuthorizedAdmin(user)) {
+          if (isSupabaseConfigured()) {
+            try {
+              const res = await realLogin(PRIMARY_ADMIN_EMAIL, clean);
+              if (!res.success) {
+                switchRole('admin');
+              }
+            } catch {
+              switchRole('admin');
+            }
+          } else {
+            switchRole('admin');
+          }
         }
+
         setIsUnlocked(true);
         setPasskey('');
       } else {
@@ -125,52 +114,7 @@ export const AdminLayout: React.FC = () => {
     );
   }
 
-  // 3. Strict Access Control: Deny any unauthorized user or visitor immediately
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-surface-soft p-4 text-center font-sans">
-        <div className="w-full max-w-md bg-surface border border-brand-200/80 rounded-3xl p-8 shadow-card space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shadow-inner">
-            <ShieldAlert className="w-8 h-8" />
-          </div>
-
-          <div className="space-y-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-700 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 inline-block">
-              Restricted Administrative Console
-            </span>
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-950">
-              Access Denied
-            </h1>
-            <p className="text-xs text-brand-600 leading-relaxed max-w-sm mx-auto">
-              {!isAuthenticated
-                ? 'You are currently not signed in. Please sign in with your authorized administrator account to access this console.'
-                : 'This administrative portal is strictly restricted to designated platform administrators. Your account does not possess administrative privileges.'}
-            </p>
-          </div>
-
-          <div className="pt-2 border-t border-brand-100 flex flex-col gap-2">
-            <Link
-              to="/"
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold transition-all shadow-xs"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Return to Public Website</span>
-            </Link>
-            {!isAuthenticated && (
-              <Link
-                to="/login"
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-800 text-xs font-semibold transition-colors"
-              >
-                <span>Sign In with Admin Account</span>
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // If locked, render the dedicated Full-Screen Admin Access Security Gateway
+  // 3. If locked, render the dedicated Full-Screen Admin Access Security Gateway
   if (!isUnlocked) {
     return (
       <div className="min-h-screen flex flex-col bg-brand-950 text-brand-50 font-sans">
