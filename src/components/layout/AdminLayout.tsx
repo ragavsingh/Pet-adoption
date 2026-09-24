@@ -14,7 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
-import { isAuthorizedAdmin, PRIMARY_ADMIN_EMAIL } from '../../utils/adminSecurity';
+import { isAuthorizedAdmin } from '../../utils/adminSecurity';
 
 const ADMIN_SESSION_KEY = 'pet_admin_session_auth_v2';
 const ADMIN_PASSKEY_STORAGE_KEY = 'pet_admin_session_passkey';
@@ -142,7 +142,7 @@ export const AdminLayout: React.FC = () => {
               Access Denied
             </h1>
             <p className="text-xs text-brand-600 leading-relaxed max-w-sm mx-auto">
-              This administrative portal is strictly restricted to designated platform administrators ({PRIMARY_ADMIN_EMAIL}). Your account ({user?.email || 'Not logged in'}) does not possess administrative privileges.
+              This administrative portal is strictly restricted to designated platform administrators. Your account does not possess administrative privileges.
             </p>
           </div>
 
@@ -209,9 +209,9 @@ export const AdminLayout: React.FC = () => {
               <p className="text-xs text-brand-300 leading-relaxed max-w-xs mx-auto">
                 Authorized platform administrators only. Enter your master passkey to access system governance, live diagnostics, and verification queues.
               </p>
-              <div className="pt-2 flex items-center justify-center gap-1.5 text-xs text-emerald-300">
+              <div className="pt-2 flex items-center justify-center gap-1.5 text-xs text-emerald-400 font-medium">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Admin Account: <strong className="text-white">{user?.email}</strong></span>
+                <span>Administrator Identity Authenticated</span>
               </div>
             </div>
 

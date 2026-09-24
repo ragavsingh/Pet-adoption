@@ -186,7 +186,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 {user?.name || 'Platform Admin'}
               </span>
               <span className="text-[10px] text-brand-300 block truncate -mt-0.5">
-                {user?.email || 'raghavsingh6204@gmail.com'}
+                {user?.email || 'admin@petadoption.org'}
               </span>
               <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
                 <CheckCircle2 className="w-2.5 h-2.5" />
