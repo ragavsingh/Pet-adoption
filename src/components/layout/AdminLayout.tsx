@@ -142,7 +142,9 @@ export const AdminLayout: React.FC = () => {
               Access Denied
             </h1>
             <p className="text-xs text-brand-600 leading-relaxed max-w-sm mx-auto">
-              This administrative portal is strictly restricted to designated platform administrators. Your account does not possess administrative privileges.
+              {!isAuthenticated
+                ? 'You are currently not signed in. Please sign in with your authorized administrator account to access this console.'
+                : 'This administrative portal is strictly restricted to designated platform administrators. Your account does not possess administrative privileges.'}
             </p>
           </div>
 
