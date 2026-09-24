@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
+import { isAuthorizedAdmin, PRIMARY_ADMIN_EMAIL } from '../../utils/adminSecurity';
 
 const ADMIN_SESSION_KEY = 'pet_admin_session_auth_v2';
 const ADMIN_PASSKEY_STORAGE_KEY = 'pet_admin_session_passkey';
@@ -33,22 +34,42 @@ async function sha256Hex(message: string): Promise<string> {
 }
 
 export const AdminLayout: React.FC = () => {
-  const { user, switchRole } = useAuth();
+  const { user, switchRole, isAuthenticated, isLoading } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Check if session is already unlocked in this browser tab via passkey or verified admin role
+  // 1. Strict Administrator Authorization Check
+  const isAuthorized = isAuthorizedAdmin(user);
+
+  // Check if session is already unlocked in this browser tab via verified admin identity
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     try {
-      if (user?.role === 'admin') return true;
-      const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
-      if (explicitLocked) return false;
-      const auth = sessionStorage.getItem(ADMIN_SESSION_KEY);
-      const pass = sessionStorage.getItem(ADMIN_PASSKEY_STORAGE_KEY) || localStorage.getItem(ADMIN_PASSKEY_STORAGE_KEY);
-      return auth === 'unlocked' || Boolean(pass);
+      if (isAuthorizedAdmin(user)) {
+        const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
+        if (explicitLocked) return false;
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
   });
+
+  // Keep isUnlocked state synchronized if auth finishes loading or user changes
+  useEffect(() => {
+    if (!isAuthorized) {
+      setIsUnlocked(false);
+      try {
+        sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        sessionStorage.removeItem(ADMIN_PASSKEY_STORAGE_KEY);
+        localStorage.removeItem(ADMIN_PASSKEY_STORAGE_KEY);
+      } catch {}
+    } else {
+      const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
+      if (!explicitLocked) {
+        setIsUnlocked(true);
+      }
+    }
+  }, [isAuthorized, user]);
 
   const [passkey, setPasskey] = useState('');
   const [showPasskey, setShowPasskey] = useState(false);
@@ -57,6 +78,10 @@ export const AdminLayout: React.FC = () => {
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAuthorized) {
+      setErrorMsg('Unauthorized account.');
+      return;
+    }
     setIsSubmitting(true);
     setErrorMsg('');
 
@@ -91,6 +116,58 @@ export const AdminLayout: React.FC = () => {
     setIsUnlocked(false);
     setPasskey('');
   };
+
+  // 2. Loading State
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-soft">
+        <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // 3. Strict Access Control: Deny any unauthorized user or visitor immediately
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface-soft p-4 text-center font-sans">
+        <div className="w-full max-w-md bg-surface border border-brand-200/80 rounded-3xl p-8 shadow-card space-y-6">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shadow-inner">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-700 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 inline-block">
+              Restricted Administrative Console
+            </span>
+            <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-950">
+              Access Denied
+            </h1>
+            <p className="text-xs text-brand-600 leading-relaxed max-w-sm mx-auto">
+              This administrative portal is strictly restricted to designated platform administrators ({PRIMARY_ADMIN_EMAIL}). Your account ({user?.email || 'Not logged in'}) does not possess administrative privileges.
+            </p>
+          </div>
+
+          <div className="pt-2 border-t border-brand-100 flex flex-col gap-2">
+            <Link
+              to="/"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold transition-all shadow-xs"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Return to Public Website</span>
+            </Link>
+            {!isAuthenticated && (
+              <Link
+                to="/login"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-800 text-xs font-semibold transition-colors"
+              >
+                <span>Sign In with Admin Account</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // If locked, render the dedicated Full-Screen Admin Access Security Gateway
   if (!isUnlocked) {

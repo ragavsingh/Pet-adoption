@@ -607,21 +607,12 @@ export const LoginPage: React.FC = () => {
           </form>
         )}
 
-        {/* Create Account & Admin Gateway Footer */}
+        {/* Create Account Footer */}
         <div className="text-center pt-2 border-t border-brand-100 text-xs text-brand-muted flex flex-col gap-2.5 items-center">
           <div>
             Don't have an account yet?{' '}
             <Link to="/signup" className="font-bold text-brand-800 hover:text-brand-950 underline">
               Create Account
-            </Link>
-          </div>
-          <div>
-            <Link
-              to="/admin"
-              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-500 hover:text-brand-800 transition-colors px-2.5 py-1 rounded-md hover:bg-brand-50"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-              <span>Admin Security Gateway & Console →</span>
             </Link>
           </div>
         </div>

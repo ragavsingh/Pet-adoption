@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import { SupabaseConnectionModal } from '../admin/SupabaseConnectionModal';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AdminSidebarProps {
   isOpenMobile?: boolean;
@@ -28,6 +29,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onCloseMobile,
   onLockConsole,
 }) => {
+  const { user } = useAuth();
   const isLive = adminService.isLiveRealMode();
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
 
@@ -180,11 +182,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
             <div className="min-w-0">
               <span className="text-xs font-bold text-white block truncate">
-                Admin Console
+                {user?.name || 'Platform Admin'}
               </span>
-              <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+              <span className="text-[10px] text-brand-300 block truncate -mt-0.5">
+                {user?.email || 'raghavsingh6204@gmail.com'}
+              </span>
+              <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
                 <CheckCircle2 className="w-2.5 h-2.5" />
-                Authorized
+                Authorized Admin
               </span>
             </div>
           </div>

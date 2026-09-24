@@ -8,6 +8,7 @@ import { UserAvatar } from '../common/UserAvatar';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { getNotificationConfig, resolveNotificationRoute } from '../../utils/notificationConfig';
+import { isAuthorizedAdmin } from '../../utils/adminSecurity';
 import {
   Heart,
   Bell,
@@ -375,22 +376,13 @@ export const Navbar: React.FC = () => {
                       </>
                     )}
 
-                    {role === 'admin' ? (
+                    {isAuthorizedAdmin(user) && (
                       <Link
                         to="/admin/dashboard"
                         onClick={() => setUserDropdownOpen(false)}
                         className="flex items-center gap-2 px-3 py-2 rounded-2xl hover:bg-brand-50 text-brand-800 font-semibold transition-colors"
                       >
-                        <Shield className="w-4 h-4 text-brand-600" />
-                        <span>Admin Overview</span>
-                      </Link>
-                    ) : (
-                      <Link
-                        to="/admin"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-2xl hover:bg-brand-50 text-brand-700 font-semibold transition-colors"
-                      >
-                        <Shield className="w-4 h-4 text-brand-500" />
+                        <Shield className="w-4 h-4 text-emerald-600" />
                         <span>Admin Portal</span>
                       </Link>
                     )}
@@ -604,7 +596,7 @@ export const Navbar: React.FC = () => {
                     )}
                   </Link>
 
-                  {role === 'admin' ? (
+                  {isAuthorizedAdmin(user) && (
                     <Link
                       to="/admin/dashboard"
                       onClick={() => setMobileMenuOpen(false)}
@@ -614,23 +606,9 @@ export const Navbar: React.FC = () => {
                         <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
                           <Shield className="w-4 h-4" />
                         </div>
-                        <span>Admin Overview</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-emerald-600" />
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/admin"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-brand-200/70 text-xs font-semibold text-brand-700 hover:bg-brand-50 transition-colors shadow-xs"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center text-brand-500">
-                          <Shield className="w-4 h-4" />
-                        </div>
                         <span>Admin Portal</span>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-brand-400" />
+                      <ChevronRight className="w-4 h-4 text-emerald-600" />
                     </Link>
                   )}
                 </div>
