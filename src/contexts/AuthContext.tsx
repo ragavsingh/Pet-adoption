@@ -409,7 +409,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     try {
       sessionStorage.removeItem('pet_admin_session_auth_v2');
+      sessionStorage.removeItem('pet_admin_session_passkey');
       sessionStorage.removeItem('pet_admin_explicit_locked');
+      localStorage.removeItem('pet_admin_session_passkey');
     } catch {
       // Ignore in non-browser environments
     }

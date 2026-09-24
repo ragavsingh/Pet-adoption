@@ -40,15 +40,13 @@ export const AdminLayout: React.FC = () => {
   // 1. Strict Administrator Authorization Check
   const isAuthorized = isAuthorizedAdmin(user);
 
-  // Check if session is already unlocked in this browser tab via verified admin identity
+  // Check if session is already unlocked in this browser tab via verified passkey
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     try {
-      if (isAuthorizedAdmin(user)) {
-        const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
-        if (explicitLocked) return false;
-        return true;
-      }
-      return false;
+      if (!isAuthorizedAdmin(user)) return false;
+      const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
+      if (explicitLocked) return false;
+      return sessionStorage.getItem(ADMIN_SESSION_KEY) === 'unlocked';
     } catch {
       return false;
     }
@@ -65,8 +63,9 @@ export const AdminLayout: React.FC = () => {
       } catch {}
     } else {
       const explicitLocked = sessionStorage.getItem('pet_admin_explicit_locked') === 'true';
-      if (!explicitLocked) {
-        setIsUnlocked(true);
+      const sessionAuth = sessionStorage.getItem(ADMIN_SESSION_KEY);
+      if (explicitLocked || sessionAuth !== 'unlocked') {
+        setIsUnlocked(false);
       }
     }
   }, [isAuthorized, user]);
@@ -202,7 +201,7 @@ export const AdminLayout: React.FC = () => {
 
             <div className="space-y-1.5">
               <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-400 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/80 inline-block">
-                Dedicated Administrative Console
+                Step 2: Security Passkey Verification
               </span>
               <h1 className="font-display text-2xl sm:text-3xl font-bold text-white pt-2">
                 Platform Security Gateway
@@ -210,6 +209,10 @@ export const AdminLayout: React.FC = () => {
               <p className="text-xs text-brand-300 leading-relaxed max-w-xs mx-auto">
                 Authorized platform administrators only. Enter your master passkey to access system governance, live diagnostics, and verification queues.
               </p>
+              <div className="pt-2 flex items-center justify-center gap-1.5 text-xs text-emerald-300">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Admin Account: <strong className="text-white">{user?.email}</strong></span>
+              </div>
             </div>
 
             <form onSubmit={handleUnlock} className="space-y-4 text-left">
