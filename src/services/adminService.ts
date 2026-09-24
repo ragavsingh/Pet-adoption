@@ -8,11 +8,11 @@ import { resolveUserAvatar } from '../utils/avatarUtils';
 import { realtimeSync } from './realtimeSync';
 
 export function getAdminPasskey(): string {
-  if (typeof window === 'undefined') return 'admin2026';
+  if (typeof window === 'undefined') return '';
   return (
     sessionStorage.getItem('pet_admin_session_passkey') ||
     localStorage.getItem('pet_admin_session_passkey') ||
-    'admin2026'
+    ''
   );
 }
 

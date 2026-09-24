@@ -21,9 +21,9 @@ const ADMIN_PASSKEY_STORAGE_KEY = 'pet_admin_session_passkey';
 
 // Cryptographic SHA-256 hashes of approved admin master passkeys
 const AUTHORIZED_PASSKEY_HASHES = new Set([
-  '6051fc84a7a0d74c225fb18a496b09952da5642e60723ecae543298edd7d82d6', // admin2026
-  'a36aef5a11c4073fbe60314fc9df530a9d5f986533594d1f5190742ff9e0e408', // Admin@2026
-  '0142a456b89f5cac01f4adf9ca1c7d41ea11b74dc15dd984ac8dd97c4765e22f', // petadmin2026
+  '6051fc84a7a0d74c225fb18a496b09952da5642e60723ecae543298edd7d82d6',
+  'a36aef5a11c4073fbe60314fc9df530a9d5f986533594d1f5190742ff9e0e408',
+  '0142a456b89f5cac01f4adf9ca1c7d41ea11b74dc15dd984ac8dd97c4765e22f',
 ]);
 
 async function sha256Hex(message: string): Promise<string> {

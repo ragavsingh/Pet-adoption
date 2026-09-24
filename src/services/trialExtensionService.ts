@@ -126,12 +126,12 @@ export const trialExtensionService = {
         (typeof window !== 'undefined'
           ? sessionStorage.getItem('pet_admin_session_passkey') ||
             localStorage.getItem('pet_admin_session_passkey')
-          : null) || 'admin2026';
+          : null) || '';
 
       const { data, error } = await (supabase as any).rpc('provider_approve_trial_extension', {
         p_identifier: extensionOrRequestId,
         p_response_note: responseNote || null,
-        p_passkey: passkey || 'admin2026',
+        p_passkey: passkey || undefined,
       });
 
       if (error) {
@@ -171,12 +171,12 @@ export const trialExtensionService = {
         (typeof window !== 'undefined'
           ? sessionStorage.getItem('pet_admin_session_passkey') ||
             localStorage.getItem('pet_admin_session_passkey')
-          : null) || 'admin2026';
+          : null) || '';
 
       const { data, error } = await (supabase as any).rpc('provider_reject_trial_extension', {
         p_identifier: extensionOrRequestId,
         p_reason: reason || null,
-        p_passkey: passkey || 'admin2026',
+        p_passkey: passkey || undefined,
       });
 
       if (error) {
